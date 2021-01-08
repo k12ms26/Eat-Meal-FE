@@ -70,8 +70,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        mGeocoder = Geocoder(this)
-        getLocation()
+//        mGeocoder = Geocoder(this)
+//        getLocation()
         setContentView(R.layout.activity_main) // activity main view 확인
         //val sectionsPagerAdapter = SectionsPagerAdapter(this, supportFragmentManager)
         sectionsPagerAdapter = SectionsPagerAdapter(this, supportFragmentManager)

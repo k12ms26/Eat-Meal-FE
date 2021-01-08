@@ -17,13 +17,19 @@ import java.util.concurrent.locks.ReentrantLock
 
 
 class CustomAdapter(val ContactClickListner: ContactClickListner): RecyclerView.Adapter<CustomAdapter.ContactsViewHolder>(),Filterable{
-    private var items: List<ContactModel> = emptyList()
+//    private var items: List<ContactModel> = emptyList()
+    private var items = mutableListOf<ContactModel>()
     private var searchList = mutableListOf<ContactModel>()
     val mutex = Mutex()
     val lock = ReentrantLock()
 
+    fun addItem(contactModel: ContactModel){
+        items.add(contactModel)
+        notifyDataSetChanged()
+    }
+
     @Synchronized
-    fun bindItem(items: List<ContactModel>){
+    fun bindItem(items: ArrayList<ContactModel>){
 
         this.items = items
         this.searchList = ArrayList(items)
@@ -42,7 +48,7 @@ class CustomAdapter(val ContactClickListner: ContactClickListner): RecyclerView.
         private val call = itemView.findViewById<ImageButton>(R.id.call_btn)
 
         override fun onClick(v: View?) {
-            ContactClickListner.onContactClickListner(composePhoneNumbersText(items[adapterPosition].phoneNumbers))
+            ContactClickListner.onContactClickListner(items[adapterPosition].number)
 //            println("TOUCH")
 
         }
@@ -50,7 +56,6 @@ class CustomAdapter(val ContactClickListner: ContactClickListner): RecyclerView.
 
 
         @Synchronized fun bindItem(contactModel: ContactModel, ContactClickListner: ContactClickListner) {
-            lock.lock()
 //                if(contactModel.photoUri!= ""){
 //                val resourceId = context.resources.getIdentifier(contactModel.photoUri, "drawble", context.packageName)
 //
@@ -65,22 +70,21 @@ class CustomAdapter(val ContactClickListner: ContactClickListner): RecyclerView.
 
             call.setOnClickListener(this)
 
-            userName.text = contactModel.fullName
+            userName.text = contactModel.name
 
             userPay.visibility =
-                if (contactModel.phoneNumbers.isEmpty()) View.GONE else View.VISIBLE
-            userPay.text = composePhoneNumbersText(contactModel.phoneNumbers)
+                if (contactModel.number.isEmpty()) View.GONE else View.VISIBLE
+            userPay.text = contactModel.number
 
             //val resourceId = context.resources.getIdentifier(contactModel.photoUri)
 
-             if (contactModel.photoUri.isNullOrEmpty()) {
-                    userPhoto.setImageResource(R.mipmap.ic_launcher_round)
-                } else {
-                 userPhoto.visibility = View.VISIBLE
-                 userPhoto.setImageURI(Uri.parse(contactModel.photoUri))
-             }
-
-            lock.unlock()
+//             if (contactModel.photoUri.isNullOrEmpty()) {
+//                    userPhoto.setImageResource(R.mipmap.ic_launcher_round) //
+//                } else {
+//                 userPhoto.visibility = View.VISIBLE
+//                 userPhoto.setImageURI(Uri.parse(contactModel.photoUri)) // photo view
+//             }
+            userPhoto.setImageResource(R.mipmap.ic_launcher_round)
         }
 
         private fun composePhoneNumbersText(phoneNumbers: Set<String>): String =
@@ -140,7 +144,7 @@ class CustomAdapter(val ContactClickListner: ContactClickListner): RecyclerView.
                     val filteredList = ArrayList<ContactModel>()
                     //이부분에서 원하는 데이터를 검색할 수 있음
                     for (row in searchList) {
-                        if (  !row.fullName.isNullOrEmpty() && row.fullName.toLowerCase().contains(charString.toLowerCase())) {
+                        if (  !row.name.isNullOrEmpty() && row.name.toLowerCase().contains(charString.toLowerCase())) {
                             filteredList.add(row)
                         }
                     }

@@ -585,40 +585,40 @@ class CFragment : Fragment(), FragmentLifecycle {
 
     @RequiresApi(Build.VERSION_CODES.O)
     @Synchronized override fun onResumeFragment() {
-        Log.d("tab","resumeC")
-        getCurrentDate()
-        getCurrentPosition()
-        if(lat == "" || lng == "" || address==" "){
-//            Toast.makeText(this.requireContext(), "gps is null", Toast.LENGTH_SHORT).show()
-            var count = 0
-            while((lat == "" || lng == "" || address == " ") && count < 1000){
-                sleep(1)
-                count++
-                println(count)
-            }
-        }
-        //Address
-        var addrText = fragC?.findViewById<TextView>(R.id.address)
-        addrText?.text = address
-//        Toast.makeText(this.requireContext(), "gps is Ok", Toast.LENGTH_SHORT).show()
-        println("date is $base_data")
-        println("time is $base_time")
-        println("Address is $address")
-        var grid: LatXLngY?
-        if (!(lat == "") && !(lng == "")) {
-            grid = convertGRID_GPS(TO_GRID, lat.toDouble(), lng.toDouble())
-        }
-        else{
-            grid = null
-            Log.d("error","retry load lat and lng")
-        }
-        nx = grid?.x?.toInt().toString()
-        ny = grid?.y?.toInt().toString()
-        println("$nx, $ny")
-        callweather()
-        //초기화
-
-        //Temperature
+//        Log.d("tab","resumeC")
+//        getCurrentDate()
+//        getCurrentPosition()
+//        if(lat == "" || lng == "" || address==" "){
+////            Toast.makeText(this.requireContext(), "gps is null", Toast.LENGTH_SHORT).show()
+//            var count = 0
+//            while((lat == "" || lng == "" || address == " ") && count < 1000){
+//                sleep(1)
+//                count++
+//                println(count)
+//            }
+//        }
+//        //Address
+//        var addrText = fragC?.findViewById<TextView>(R.id.address)
+//        addrText?.text = address
+////        Toast.makeText(this.requireContext(), "gps is Ok", Toast.LENGTH_SHORT).show()
+//        println("date is $base_data")
+//        println("time is $base_time")
+//        println("Address is $address")
+//        var grid: LatXLngY?
+//        if (!(lat == "") && !(lng == "")) {
+//            grid = convertGRID_GPS(TO_GRID, lat.toDouble(), lng.toDouble())
+//        }
+//        else{
+//            grid = null
+//            Log.d("error","retry load lat and lng")
+//        }
+//        nx = grid?.x?.toInt().toString()
+//        ny = grid?.y?.toInt().toString()
+//        println("$nx, $ny")
+//        callweather()
+//        //초기화
+//
+//        //Temperature
     }
 
 

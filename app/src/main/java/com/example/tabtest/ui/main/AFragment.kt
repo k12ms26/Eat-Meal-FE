@@ -10,6 +10,7 @@ import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.widget.SearchView
@@ -23,13 +24,76 @@ import com.example.tabtest.R
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposables
 import io.reactivex.schedulers.Schedulers
+import retrofit2.Call
+import retrofit2.Callback
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.Body
+import retrofit2.http.GET
+import retrofit2.http.POST
+import retrofit2.http.Query
+import java.lang.Thread.sleep
+import java.util.*
+import kotlin.collections.ArrayList
+
+private val retrofit = Retrofit.Builder()
+        .baseUrl("http://192.249.18.133:8080/") // 마지막 / 반드시 들어가야 함
+        .addConverterFactory(GsonConverterFactory.create()) // converter 지정
+        .build() // retrofit 객체 생성
+
+
+object ContactApiObject {
+    val retrofitService: ContactInterface by lazy {
+        retrofit.create(ContactInterface::class.java)
+    }
+}
+
+
+
+public data class Contact (
+        val name: String?,
+        val number: String
+)
+
+//public data class GetContact(
+//        val _id: String,
+//        val name: String,
+//        val number: String
+//
+//)
+
+public data class CreateContact(
+        val result: String,
+        val id: String
+)
+
+public interface ContactInterface{
+    @GET("api/contacts")
+    fun GetContact(
+            @Query("name") name :String,
+            @Query("number") number :String
+    ): Call<Objects>
+
+    @GET("api/contacts")
+    fun GetAllContact(
+    ):Call<ArrayList<ContactModel>>
+
+    @POST("api/contacts")
+    fun CreateContact(
+            @Body contact: Contact
+    ): Call<CreateContact>
+}
+
+
 
 
 class AFragment : Fragment(), SearchView.OnQueryTextListener, FragmentLifecycle, ContactClickListner {
-    private lateinit var contactsHelper: ContactsHelper
+//    private lateinit var contactsHelper: ContactsHelper
     private var disposable = Disposables.empty()
     private val mAdapter = CustomAdapter(this)
     private var SaveQuery: String? = ""
+    var ContactList:List<ContactModel> = emptyList()
+
 
     val callIntent = Intent(Intent.ACTION_CALL)
 
@@ -49,7 +113,17 @@ class AFragment : Fragment(), SearchView.OnQueryTextListener, FragmentLifecycle,
 
         val root = inflater.inflate(R.layout.fragment_a, container, false)
         val textView: TextView = root.findViewById(R.id.section_label)
-        val swipeRefreshLayout: SwipeRefreshLayout = root.findViewById(R.id.srl_main)
+//        val swipeRefreshLayout: SwipeRefreshLayout = root.findViewById(R.id.srl_main)
+
+        val button: ImageButton = root.findViewById(R.id.contact_add)
+        button.setOnClickListener {
+            val mDialog = ContactAddDialog() // make dialog object
+            mDialog.show(requireFragmentManager(), "CONTACT ADD") //dialog show
+            mDialog.mAdapter = mAdapter
+
+//            mDialog.PhotoPosition = currentposition // send current position to dialog fragment
+//            mDialog.PhotoArray = photolist // send photoArray to dialog position
+        }
 
 
         val searchView: SearchView = root.findViewById(R.id.searchV)
@@ -58,7 +132,7 @@ class AFragment : Fragment(), SearchView.OnQueryTextListener, FragmentLifecycle,
         Log.d("check", "search")
 
 
-        contactsHelper = ContactsHelper(requireContext().contentResolver)
+//        contactsHelper = ContactsHelper(requireContext().contentResolver)
 
         val recyler_view: RecyclerView = root.findViewById(R.id.recycler_view)
         recyler_view.adapter = mAdapter
@@ -67,24 +141,37 @@ class AFragment : Fragment(), SearchView.OnQueryTextListener, FragmentLifecycle,
         recyler_view.layoutManager = layout
         //recyler_view.setHasFixedSize(true)
 
+        val call = ContactApiObject.retrofitService.GetAllContact()
+        call.enqueue(object: retrofit2.Callback<ArrayList<ContactModel>> {
+            override fun onFailure(call: Call<ArrayList<ContactModel>>, t: Throwable) {
+                println("실패")
+            }
+            override fun onResponse(call: Call<ArrayList<ContactModel>>, response: retrofit2.Response<ArrayList<ContactModel>>) {
+                println(response.body())
+                response.body()?.let { mAdapter.bindItem(it) }
+            }
+        })
+
+//        mAdapter.bindItem()
 
 
 
-        if (ContextCompat.checkSelfPermission(
-                requireContext(),
-                Manifest.permission.READ_CONTACTS
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(
-                requireActivity(),
-                arrayOf(Manifest.permission.READ_CONTACTS),
-                PERMISSION_READ_CONTACTS
-            )
-        } else {
-            loadContacts()
-        }
+//        if (ContextCompat.checkSelfPermission(
+//                requireContext(),
+//                Manifest.permission.READ_CONTACTS
+//            ) != PackageManager.PERMISSION_GRANTED
+//        ) {
+//            ActivityCompat.requestPermissions(
+//                requireActivity(),
+//                arrayOf(Manifest.permission.READ_CONTACTS),
+//                PERMISSION_READ_CONTACTS
+//            )
+//        } else {
+//            loadContacts()
+//
+//        }
 
-        swipeRefreshLayout.setOnRefreshListener {
+//        swipeRefreshLayout.setOnRefreshListener {
 //            contactsHelper = ContactsHelper(requireContext().contentResolver)
 //
 //            val recyler_view: RecyclerView = root.findViewById(R.id.recycler_view)
@@ -94,72 +181,85 @@ class AFragment : Fragment(), SearchView.OnQueryTextListener, FragmentLifecycle,
 //            recyler_view.layoutManager = layout
             //recyler_view.setHasFixedSize(true)
 
-            if(!searchView.isIconified()){
-                searchView.onActionViewCollapsed()
-            }
-
-
-            if (ContextCompat.checkSelfPermission(
-                    requireContext(),
-                    Manifest.permission.READ_CONTACTS
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                ActivityCompat.requestPermissions(
-                    requireActivity(),
-                    arrayOf(Manifest.permission.READ_CONTACTS),
-                    PERMISSION_READ_CONTACTS
-                )
-            } else {
-                loadContacts()
-//                sleep(1000)
-                println(SaveQuery)
-//                if(SaveQuery!=null){ this.search(SaveQuery)}
-            }
-
-            swipeRefreshLayout.isRefreshing = false
-        }
-        Log.d("check", "here")
+//            if(!searchView.isIconified()){
+//                searchView.onActionViewCollapsed()
+//            }
+//
+//
+//            if (ContextCompat.checkSelfPermission(
+//                    requireContext(),
+//                    Manifest.permission.READ_CONTACTS
+//                ) != PackageManager.PERMISSION_GRANTED
+//            ) {
+//                ActivityCompat.requestPermissions(
+//                    requireActivity(),
+//                    arrayOf(Manifest.permission.READ_CONTACTS),
+//                    PERMISSION_READ_CONTACTS
+//                )
+//            } else {
+//                loadContacts()
+////                sleep(1000)
+//                println(SaveQuery)
+////                if(SaveQuery!=null){ this.search(SaveQuery)}
+//            }
+//
+//            swipeRefreshLayout.isRefreshing = false
+//        }
+//        Log.d("check", "here")
 //        swipeRefreshLayout.isRefreshing = false
         return root
     }
 
 
-    private fun loadContacts() {
-        disposable.dispose()
-        disposable = contactsHelper.getAllContacts().subscribeOn(Schedulers.io())
-            .observeOn(AndroidSchedulers.mainThread())
-            .subscribe({
-                mAdapter.bindItem(it.values.toList()) //as MutableList<ContactModel>)
-                println("LOAD LIST, ${it.values.toList()}")
-
-            }, { Log.e("ContactHelper", it.message, it) })
-    }
+//    private fun loadContacts() {
+//        disposable.dispose()
+//        disposable = contactsHelper.getAllContacts().subscribeOn(Schedulers.io())
+//            .observeOn(AndroidSchedulers.mainThread())
+//            .subscribe({
+//                mAdapter.bindItem(it.values.toList()) //as MutableList<ContactModel>)
+//                ContactList = it.values.toList()
+//                println("LOAD LIST, ${it.values.toList()}")
+//                for (contact in ContactList) {
+//                    val call = ContactApiObject.retrofitService.CreateContact(Contact(contact.fullName!!, contact.phoneNumbers.joinToString(separator = "\n")))
+//                    call.enqueue(object : Callback<Objects> {
+//                        override fun onFailure(call: Call<Objects>, t: Throwable) {
+//                            TODO("Not yet implemented")
+//                        }
+//
+//                        override fun onResponse(call: Call<Objects>, response: retrofit2.Response<Objects>) {
+//                            println(response.body())
+//                        }
+//                    })
+//                }
+//
+//            }, { Log.e("ContactHelper", it.message, it) })
+//    }
 
     override fun onDestroy() {
         disposable.dispose()
         super.onDestroy()
     }
 
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<String>, grantResults: IntArray
-    ) {
-        when (requestCode) {
-            PERMISSION_READ_CONTACTS -> {
-                if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
-                    loadContacts()
-                }
-            }
-            REQUEST_PHONE_CALL -> {
-                if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)){
-                    startActivity(callIntent)
-                }
-            }
-            else -> {
-                // Ignore all other requests.
-            }
-        }
-    }
+//    override fun onRequestPermissionsResult(
+//        requestCode: Int,
+//        permissions: Array<String>, grantResults: IntArray
+//    ) {
+//        when (requestCode) {
+//            PERMISSION_READ_CONTACTS -> {
+//                if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+//                    loadContacts()
+//                }
+//            }
+//            REQUEST_PHONE_CALL -> {
+//                if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)){
+//                    startActivity(callIntent)
+//                }
+//            }
+//            else -> {
+//                // Ignore all other requests.
+//            }
+//        }
+//    }
 
     companion object {
         private const val PERMISSION_READ_CONTACTS = 1
