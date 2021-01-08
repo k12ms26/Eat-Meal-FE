@@ -70,4 +70,5 @@ dependencies {
     implementation 'androidx.multidex:multidex:2.0.1'
 
     implementation 'com.github.chrisbanes.photoview:library:1.2.3' // Photo Zoom in/out
+    implementation 'com.facebook.android:facebook-login:4.42.0' //facebook sdk
 }
