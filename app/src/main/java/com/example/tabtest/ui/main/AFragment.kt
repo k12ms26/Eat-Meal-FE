@@ -6,11 +6,10 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.view.*
 import android.view.GestureDetector.SimpleOnGestureListener
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
 import android.widget.ImageButton
+import android.widget.PopupMenu
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.widget.SearchView
@@ -28,10 +27,7 @@ import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import retrofit2.http.Body
-import retrofit2.http.GET
-import retrofit2.http.POST
-import retrofit2.http.Query
+import retrofit2.http.*
 import java.lang.Thread.sleep
 import java.util.*
 import kotlin.collections.ArrayList
@@ -82,6 +78,12 @@ public interface ContactInterface{
     fun CreateContact(
             @Body contact: Contact
     ): Call<CreateContact>
+
+    @DELETE("api/contacts/{id}")
+    fun DeleteContact(
+            @Path("id") id: String?
+    ): Call<Objects>
+
 }
 
 
@@ -332,6 +334,38 @@ class AFragment : Fragment(), SearchView.OnQueryTextListener, FragmentLifecycle,
         }
 
 
+    }
+
+    override fun onContactSettingClicklistner(v: View?, contact: ContactModel) {
+        val menu = PopupMenu(requireContext(), v)
+        MenuInflater(requireContext()).inflate(R.menu.contact_menu, menu.menu)
+        menu.setOnMenuItemClickListener(object: PopupMenu.OnMenuItemClickListener{
+            override fun onMenuItemClick(item: MenuItem?): Boolean {
+                when(item?.itemId){
+                    R.id.Modify ->{
+
+                    }
+                    R.id.Delete ->{
+                        val call = ContactApiObject.retrofitService.DeleteContact(contact._id)
+                        call.enqueue(object: retrofit2.Callback<Objects> {
+                            override fun onFailure(call: Call<Objects>, t: Throwable) {
+                                println("실패")
+                            }
+                            override fun onResponse(call: Call<Objects>, response: retrofit2.Response<Objects>) {
+                                println(response.body())
+                                mAdapter.deleteItem(contact)
+                            }
+                        })
+                    }
+                    else ->{
+                        return false
+                    }
+                }
+                return false
+            }
+
+        })
+        menu.show()
     }
 
 

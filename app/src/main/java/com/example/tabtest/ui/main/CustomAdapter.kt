@@ -1,19 +1,19 @@
 package com.example.tabtest.ui.main
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.util.Log
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.view.*
 import android.widget.*
 import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.example.tabtest.R
 import kotlinx.coroutines.sync.Mutex
 import java.util.concurrent.locks.ReentrantLock
+import java.util.zip.Inflater
 
 
 class CustomAdapter(val ContactClickListner: ContactClickListner): RecyclerView.Adapter<CustomAdapter.ContactsViewHolder>(),Filterable{
@@ -40,12 +40,18 @@ class CustomAdapter(val ContactClickListner: ContactClickListner): RecyclerView.
         notifyDataSetChanged()
     }
 
-    inner class ContactsViewHolder(itemView: View): RecyclerView.ViewHolder(itemView), View.OnClickListener{
+    fun deleteItem(contactModel: ContactModel){
+        items.remove(contactModel)
+        notifyDataSetChanged()
+    }
+
+    inner class ContactsViewHolder(itemView: View): RecyclerView.ViewHolder(itemView), View.OnClickListener, View.OnCreateContextMenuListener{
         private val userPhoto = itemView.findViewById<ImageView>(R.id.userimg)
         private val userName = itemView.findViewById<TextView>(R.id.userNameTxt)
         private val userPay = itemView.findViewById<TextView>(R.id.payTxt)
         private val userAddress: TextView = itemView.findViewById<TextView>(R.id.addressTxt)
         private val call = itemView.findViewById<ImageButton>(R.id.call_btn)
+        private val setting = itemView.findViewById<ImageButton>(R.id.Contact_setting)
 
         override fun onClick(v: View?) {
             ContactClickListner.onContactClickListner(items[adapterPosition].number)
@@ -53,7 +59,11 @@ class CustomAdapter(val ContactClickListner: ContactClickListner): RecyclerView.
 
         }
 
-
+        override fun onCreateContextMenu(menu: ContextMenu?, v: View?, menuInfo: ContextMenu.ContextMenuInfo?) {
+            menu?.setHeaderTitle("Select The Action");
+            menu?.add(0, v!!.getId(), 0, "Modify");//groupId, itemId, order, title
+            menu?.add(0, v!!.getId(), 0, "SMS");
+        }
 
         @Synchronized fun bindItem(contactModel: ContactModel, ContactClickListner: ContactClickListner) {
 //                if(contactModel.photoUri!= ""){
@@ -69,6 +79,12 @@ class CustomAdapter(val ContactClickListner: ContactClickListner): RecyclerView.
 //                }
 
             call.setOnClickListener(this)
+            setting.setOnClickListener(object: View.OnClickListener{
+                override fun onClick(v: View?) {
+                    ContactClickListner.onContactSettingClicklistner(v, contactModel)
+                }
+            })
+
 
             userName.text = contactModel.name
 

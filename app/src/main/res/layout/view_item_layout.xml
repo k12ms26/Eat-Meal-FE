@@ -61,5 +61,18 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         />
+    <ImageButton
+        android:id="@+id/Contact_setting"
+        android:layout_width="30dp"
+        android:layout_height="30dp"
+        android:layout_marginRight="60dp"
+        android:layout_marginBottom="15dp"
+        android:background="@drawable/roundcorner"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_add"
+        android:tint="#FFFFFF"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
