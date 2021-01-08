@@ -32,6 +32,9 @@ android {
         jvmTarget = '1.8'
     }
 }
+apply plugin: 'com.android.application'
+
+apply plugin: 'com.google.gms.google-services'
 
 dependencies {
 
@@ -70,4 +73,14 @@ dependencies {
     implementation 'androidx.multidex:multidex:2.0.1'
 
     implementation 'com.github.chrisbanes.photoview:library:1.2.3' // Photo Zoom in/out
+
+    implementation 'com.facebook.android:facebook-login:4.42.0'
+
+    implementation platform('com.google.firebase:firebase-bom:26.2.0')
+
+    implementation 'com.google.firebase:firebase-analytics-ktx'
+
+    implementation platform('com.google.firebase:firebase-bom:26.1.1')
+
+    implementation 'com.google.firebase:firebase-auth-ktx'
 }
