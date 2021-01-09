@@ -20,6 +20,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.example.tabtest.R
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposables
 import io.reactivex.schedulers.Schedulers
@@ -47,6 +49,7 @@ object ContactApiObject {
 
 
 public data class Contact (
+        val user: String?,
         val name: String?,
         val number: String
 )
@@ -70,6 +73,11 @@ public interface ContactInterface{
             @Query("number") number :String
     ): Call<Objects>
 
+    @GET("api/contacts/{user}")
+    fun GetUserContact(
+            @Path("user") user: String?
+    ):Call<ArrayList<ContactModel>>
+
     @GET("api/contacts")
     fun GetAllContact(
     ):Call<ArrayList<ContactModel>>
@@ -84,6 +92,11 @@ public interface ContactInterface{
             @Path("id") id: String?
     ): Call<Objects>
 
+    @PUT("api/contacts/{id}")
+    fun ModifyContact(
+            @Path("id") id: String?,
+            @Body contact: ContactModel
+    ): Call<Objects>
 }
 
 
@@ -143,14 +156,24 @@ class AFragment : Fragment(), SearchView.OnQueryTextListener, FragmentLifecycle,
         recyler_view.layoutManager = layout
         //recyler_view.setHasFixedSize(true)
 
-        val call = ContactApiObject.retrofitService.GetAllContact()
+        Firebase.auth.currentUser?.uid?.let { Log.d("UUIIDD", it) }
+        val call = ContactApiObject.retrofitService.GetUserContact(Firebase.auth.currentUser?.uid)
         call.enqueue(object: retrofit2.Callback<ArrayList<ContactModel>> {
             override fun onFailure(call: Call<ArrayList<ContactModel>>, t: Throwable) {
                 println("실패")
             }
             override fun onResponse(call: Call<ArrayList<ContactModel>>, response: retrofit2.Response<ArrayList<ContactModel>>) {
+                println("성공?")
                 println(response.body())
                 response.body()?.let { mAdapter.bindItem(it) }
+                if(response.isSuccessful){
+                    println("성공")
+                }
+                else{
+                    println("성공?실패")
+
+
+                }
             }
         })
 
@@ -343,7 +366,10 @@ class AFragment : Fragment(), SearchView.OnQueryTextListener, FragmentLifecycle,
             override fun onMenuItemClick(item: MenuItem?): Boolean {
                 when(item?.itemId){
                     R.id.Modify ->{
-
+                        val mDialog = ContactModifyDialog() // make dialog object
+                        mDialog.show(requireFragmentManager(), "CONTACT MODIFY") //dialog show
+                        mDialog.mAdapter = mAdapter
+                        mDialog.contactModel = contact
                     }
                     R.id.Delete ->{
                         val call = ContactApiObject.retrofitService.DeleteContact(contact._id)

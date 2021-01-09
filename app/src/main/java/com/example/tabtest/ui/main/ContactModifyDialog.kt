@@ -12,6 +12,8 @@ import android.widget.EditText
 import androidx.fragment.app.DialogFragment
 import androidx.viewpager.widget.ViewPager
 import com.example.tabtest.R
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import org.json.JSONObject
 import retrofit2.Call
 import retrofit2.Callback
@@ -31,6 +33,7 @@ private const val ARG_PARAM2 = "param2"
 class ContactModifyDialog : DialogFragment() {
 
     lateinit var mAdapter: CustomAdapter
+    lateinit var contactModel: ContactModel
     var OriginalName: String = ""
     var OriginalNumber: String = ""
 
@@ -74,23 +77,36 @@ class ContactModifyDialog : DialogFragment() {
         val NameEditText: EditText = view.findViewById(R.id.edittext_name)
         val NumberEditText: EditText = view.findViewById(R.id.edittext_phone)
 
+        NameEditText.setText(contactModel.name)
+        NumberEditText.setText(contactModel.number)
+
         SubmitButton.setOnClickListener {
             val Name: String = NameEditText.text.toString()
             val Number: String = NumberEditText.text.toString()
-            var NewContact: ContactModel = ContactModel(null, Name, Number)
+//            var NewContact: ContactModel = ContactModel(null, Firebase.auth.currentUser?.uid ,Name, Number)
+            contactModel.name = Name
+            contactModel.number = Number
 
-            val call = ContactApiObject.retrofitService.CreateContact( Contact(Name,Number))
-            call.enqueue(object: retrofit2.Callback<CreateContact> {
-                override fun onFailure(call: Call<CreateContact>, t: Throwable) {
+            val call = ContactApiObject.retrofitService.ModifyContact(contactModel._id, contactModel)
+            call.enqueue(object: retrofit2.Callback<Objects> {
+                override fun onFailure(call: Call<Objects>, t: Throwable) {
                     TODO("Not yet implemented")
                 }
-                override fun onResponse(call: Call<CreateContact>, response: retrofit2.Response<CreateContact>) {
-                    NewContact._id = response.body()?.id
-                    println(NewContact._id)
+                override fun onResponse(call: Call<Objects>, response: retrofit2.Response<Objects>) {
+//                    NewContact._id = response.body()?.id
+//                    println(NewContact._id)
+                    if(response.isSuccessful){
+                        println("수정 성공")
+                        mAdapter.notifyDataSetChanged()
+                    }
+                    else{
+                        println(response.errorBody().toString())
+                        println("수정 성공? 실패")
+                    }
                 }
             })
 
-            mAdapter.addItem(NewContact)
+//            mAdapter.addItem(NewContact)
             dismiss()
         }
 

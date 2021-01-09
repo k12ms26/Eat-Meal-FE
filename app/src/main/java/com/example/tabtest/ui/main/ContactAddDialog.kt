@@ -12,6 +12,8 @@ import android.widget.EditText
 import androidx.fragment.app.DialogFragment
 import androidx.viewpager.widget.ViewPager
 import com.example.tabtest.R
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
 import org.json.JSONObject
 import retrofit2.Call
 import retrofit2.Callback
@@ -75,9 +77,9 @@ class ContactAddDialog : DialogFragment() {
         SubmitButton.setOnClickListener {
             val Name: String = NameEditText.text.toString()
             val Number: String = NumberEditText.text.toString()
-            var NewContact: ContactModel = ContactModel(null, Name, Number)
+            var NewContact: ContactModel = ContactModel(null, Firebase.auth.currentUser?.uid ,Name, Number)
 
-            val call = ContactApiObject.retrofitService.CreateContact( Contact(Name,Number))
+            val call = ContactApiObject.retrofitService.CreateContact( Contact(Firebase.auth.currentUser?.uid,Name,Number))
             call.enqueue(object: retrofit2.Callback<CreateContact> {
                 override fun onFailure(call: Call<CreateContact>, t: Throwable) {
                     TODO("Not yet implemented")
@@ -85,10 +87,11 @@ class ContactAddDialog : DialogFragment() {
                 override fun onResponse(call: Call<CreateContact>, response: retrofit2.Response<CreateContact>) {
                     NewContact._id = response.body()?.id
                     println(NewContact._id)
+                    mAdapter.addItem(NewContact)
                 }
             })
 
-            mAdapter.addItem(NewContact)
+
             dismiss()
         }
 

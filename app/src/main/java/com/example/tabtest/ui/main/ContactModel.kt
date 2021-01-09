@@ -1,5 +1,8 @@
 package com.example.tabtest.ui.main
 
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
+
 //class ContactModel(
 //    val id: Long,
 //    val contactId: Long,
@@ -17,5 +20,7 @@ package com.example.tabtest.ui.main
 class ContactModel(
         var _id: String?,
 //        val photo: String,
+        var user: String? = Firebase.auth.currentUser?.uid,
         var name: String,
-        var number: String)
+        var number: String
+)

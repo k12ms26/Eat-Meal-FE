@@ -1,27 +1,99 @@
 package com.example.tabtest.ui.main
 
 
-import android.app.Activity
+import android.app.Activity.RESULT_OK
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
 import android.provider.MediaStore
+import android.util.Base64
 import android.util.Log
 import android.view.*
 import android.widget.ImageButton
-import android.widget.Toast
-import androidx.annotation.RequiresApi
+import android.widget.PopupMenu
+import androidx.core.content.FileProvider
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.tabtest.MainActivity
 import com.example.tabtest.R
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
+import retrofit2.Call
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.http.*
+import java.io.ByteArrayOutputStream
+import java.io.File
+import java.io.IOException
+import java.io.InputStream
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.collections.ArrayList
 
 
 //public var photoposition = 0
 //public var photoArray = ArrayList<GridItem>()
+
+public data class Photo (
+        val user: String?,
+        val image: String
+)
+
+//public data class serverPhoto(
+//        val _id: String,
+//        val user: String,
+//        val image: String
+//)
+
+//public data class GetContact(
+//        val _id: String,
+//        val name: String,
+//        val number: String
+//
+//)
+
+public data class CreatePhoto(
+        val result: String,
+        val id: String
+)
+
+public interface PhotoInterface{
+    @GET("api/photos/{user}")
+    fun GetUserPhoto(
+            @Path("user") user: String?
+    ):Call<ArrayList<GridItem>>
+
+    @POST("api/photos")
+    fun CreatePhoto(
+            @Body photo: Photo
+    ): Call<CreatePhoto>
+
+    @DELETE("api/photos/{id}")
+    fun DeletePhoto(
+            @Path("id") id: String?
+    ): Call<Objects>
+
+}
+
+private val retrofit = Retrofit.Builder()
+        .baseUrl("http://192.249.18.133:8080/") // 마지막 / 반드시 들어가야 함
+        .addConverterFactory(GsonConverterFactory.create()) // converter 지정
+        .build() // retrofit 객체 생성
+
+object PhotoApiObject {
+    val retrofitService: PhotoInterface by lazy {
+        retrofit.create(PhotoInterface::class.java)
+    }
+}
+
+
+
 
 class BFragment : Fragment(), FragmentLifecycle, CellClickListner {
 
@@ -31,6 +103,9 @@ class BFragment : Fragment(), FragmentLifecycle, CellClickListner {
     var TouchCount = 0
     var tempScale = 100
     var currentScale = 100
+    lateinit var mCurrentPhotoPath: String
+
+
 
     private val OPEN_GALLERY = 1
     var imageList : ArrayList<GridItem> = ArrayList<GridItem>()
@@ -44,7 +119,8 @@ class BFragment : Fragment(), FragmentLifecycle, CellClickListner {
         }
         val button: ImageButton = view.findViewById(R.id.add_btn)
         button.setOnClickListener {
-            openGallery()
+            dispatchTakePictureIntent()
+            println("Touch")
         }
 
         //// GESTURE START
@@ -213,6 +289,25 @@ class BFragment : Fragment(), FragmentLifecycle, CellClickListner {
 
         //// GESTURE END
 
+        val call = PhotoApiObject.retrofitService.GetUserPhoto(Firebase.auth.currentUser?.uid)
+        call.enqueue(object: retrofit2.Callback<ArrayList<GridItem>> {
+            override fun onFailure(call: Call<ArrayList<GridItem>>, t: Throwable) {
+                println("실패")
+            }
+            override fun onResponse(call: Call<ArrayList<GridItem>>, response: retrofit2.Response<ArrayList<GridItem>>) {
+                println("성공?")
+                println(response.body())
+                if(response.isSuccessful){
+                    response.body()?.let { mAdapter.bindItem(it) }
+                    println("성공")
+                }
+                else{
+                    println("성공?실패")
+
+
+                }
+            }
+        })
 
 
 
@@ -220,54 +315,172 @@ class BFragment : Fragment(), FragmentLifecycle, CellClickListner {
     }
 
 
-    private fun openGallery(){
-        val intent = Intent(Intent.ACTION_GET_CONTENT)
-        intent.setType("image/*")
-        startActivityForResult(intent, OPEN_GALLERY)
+//    private fun openGallery(){
+//        val intent = Intent(Intent.ACTION_GET_CONTENT)
+//        intent.setType("image/*")
+//        startActivityForResult(intent, OPEN_GALLERY)
+//    }
+//
+//    @RequiresApi(Build.VERSION_CODES.P)
+//    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+//        super.onActivityResult(requestCode, resultCode, data)
+//
+//        if(resultCode == Activity.RESULT_OK){
+//            if(requestCode == OPEN_GALLERY){
+//                var image : Uri? = data?.data
+//                var cr = activity?.contentResolver
+//                if(cr != null && image != null) {
+//                    val bitmap = when {
+//                        Build.VERSION.SDK_INT < 28 -> MediaStore.Images.Media.getBitmap(
+//                            activity?.contentResolver, image
+//                        )
+//                        else -> {
+//                            val source = ImageDecoder.createSource(cr, image)
+//                            ImageDecoder.decodeBitmap(source)
+//
+//                        }
+//                    }
+////                    mAdapter.addItem(GridItem(mAdapter.itemCount, bitmap))
+//                    isIn = false
+//                    for(s in mAdapter.dataList){
+//                        if(s.data == data?.data){
+//                            isIn = true
+//                            break
+//                        }
+//                    }
+//                    if(!isIn) {
+//                        mAdapter.addItem(GridItem(mAdapter.itemCount, bitmap, data?.data)) // add photo to recyclerview
+//                    }
+//                }
+//                else{
+//                    Log.d("Error", "Something Wrong")
+//                }
+//            }
+//            else{
+//                Log.d("Error", "Something Wrong")
+//            }
+//        }
+//        else{
+//            Log.d("Error", "Something Wrong")
+//        }
+//    }
+
+
+    val REQUEST_IMAGE_CAPTURE = 1
+
+    private fun dispatchTakePictureIntent() {
+//        Intent(MediaStore.ACTION_IMAGE_CAPTURE).also { takePictureIntent ->
+//            takePictureIntent.resolveActivity(requireContext().packageManager)?.also {
+//                startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
+//            }
+//        }
+
+        val takePictureIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+//        if (takePictureIntent.resolveActivity(requireActivity().packageManager) != null) {
+        val photoFile: File? = try {
+            createImageFile()
+        } catch (ex: IOException) {
+            // Error occurred while creating the File
+            null
+        }
+        // Continue only if the File was successfully created
+        photoFile?.also {
+            val photoURI: Uri = FileProvider.getUriForFile(
+                    requireContext(),
+                    "com.example.tabtest.fileprovider",
+                    it
+            )
+            takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI)
+
+            startActivityForResult(takePictureIntent, REQUEST_IMAGE_CAPTURE)
+//        }
+
+//        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+//        startActivity(intent);
+
+        }
     }
 
-    @RequiresApi(Build.VERSION_CODES.P)
+    @Throws(IOException::class)
+    private fun createImageFile(): File {
+        // Create an image file name
+        val timeStamp: String = SimpleDateFormat("yyyyMMdd_HHmmss").format(Date())
+        val storageDir: File? = requireActivity().getExternalFilesDir(Environment.DIRECTORY_PICTURES)
+        return File.createTempFile(
+                "JPEG_${timeStamp}_", /* prefix */
+                ".jpg", /* suffix */
+                storageDir /* directory */
+        ).apply {
+            // Save a file: path for use with ACTION_VIEW intents
+            mCurrentPhotoPath = absolutePath
+        }
+    }
+
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+//            val imageBitmap = data?.extras?.get("data") as Bitmap // problem!! this bitmap is not original
+            println("bitmap 가져옴")
+//            imageView.setImageBitmap(imageBitmap)
+        }
 
-        if(resultCode == Activity.RESULT_OK){
-            if(requestCode == OPEN_GALLERY){
-                var image : Uri? = data?.data
-                var cr = activity?.contentResolver
-                if(cr != null && image != null) {
-                    val bitmap = when {
-                        Build.VERSION.SDK_INT < 28 -> MediaStore.Images.Media.getBitmap(
-                            activity?.contentResolver, image
-                        )
-                        else -> {
-                            val source = ImageDecoder.createSource(cr, image)
-                            ImageDecoder.decodeBitmap(source)
+        try {
+            if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
+                val file = File(mCurrentPhotoPath)
+                        if (Build.VERSION.SDK_INT >= 29) {
+                            val source = ImageDecoder.createSource(requireActivity().getContentResolver(), Uri.fromFile(file));
+                                try {
+                                    val bitmap = ImageDecoder.decodeBitmap(source);
+                                    if (bitmap != null) {
+//                                        iv_photo.setImageBitmap(bitmap);
+                                        println(bitmap)
+                                        file.delete()
+                                        var NewPhoto = GridItem(null, Firebase.auth.currentUser?.uid, imageToString(bitmap))
+                                        val call = PhotoApiObject.retrofitService.CreatePhoto( Photo(Firebase.auth.currentUser?.uid,imageToString(bitmap)))
+                                        call.enqueue(object: retrofit2.Callback<CreatePhoto> {
+                                            override fun onFailure(call: Call<CreatePhoto>, t: Throwable) {
+                                                TODO("Not yet implemented")
+                                            }
+                                            override fun onResponse(call: Call<CreatePhoto>, response: retrofit2.Response<CreatePhoto>) {
+                                                NewPhoto._id = response.body()?.id
+//                                                println(NewContact._id)
+                                                mAdapter.addItem(NewPhoto)
+                                            }
+                                        })
 
+                                    }
+                                }
+                                catch (e:IOException) { e.printStackTrace(); } }
+                        else {
+                            try {
+                                val bitmap = MediaStore.Images.Media.getBitmap(requireActivity().getContentResolver(), Uri.fromFile(file));
+                                if (bitmap != null) {
+//                                    iv_photo.setImageBitmap(bitmap)
+                                    println(bitmap)
+                                    file.delete()
+                                    var NewPhoto = GridItem(null, Firebase.auth.currentUser?.uid, imageToString(bitmap))
+                                    val call = PhotoApiObject.retrofitService.CreatePhoto( Photo(Firebase.auth.currentUser?.uid,imageToString(bitmap)))
+                                    call.enqueue(object: retrofit2.Callback<CreatePhoto> {
+                                        override fun onFailure(call: Call<CreatePhoto>, t: Throwable) {
+                                            TODO("Not yet implemented")
+                                        }
+                                        override fun onResponse(call: Call<CreatePhoto>, response: retrofit2.Response<CreatePhoto>) {
+                                            NewPhoto._id = response.body()?.id
+//                                                println(NewContact._id)
+                                            mAdapter.addItem(NewPhoto)
+                                        }
+                                    })
+
+                                }
+                            }
+                        catch (e :IOException ) { e.printStackTrace() }
                         }
-                    }
-//                    mAdapter.addItem(GridItem(mAdapter.itemCount, bitmap))
-                    isIn = false
-                    for(s in mAdapter.dataList){
-                        if(s.data == data?.data){
-                            isIn = true
-                            break
-                        }
-                    }
-                    if(!isIn) {
-                        mAdapter.addItem(GridItem(mAdapter.itemCount, bitmap, data?.data)) // add photo to recyclerview
-                    }
-                }
-                else{
-                    Log.d("Error", "Something Wrong")
-                }
-            }
-            else{
-                Log.d("Error", "Something Wrong")
             }
         }
-        else{
-            Log.d("Error", "Something Wrong")
-        }
+        catch (error :Exception ) { error.printStackTrace(); }
+
+
     }
 
 
@@ -299,6 +512,48 @@ class BFragment : Fragment(), FragmentLifecycle, CellClickListner {
 //        intent.putExtra("key", 3)
 //        requireContext().startActivity(intent)
 
+    }
+
+    override fun onCellSettingClicklistner(v: View?, gridItem: GridItem) {
+        val menu = PopupMenu(requireContext(), v)
+        MenuInflater(requireContext()).inflate(R.menu.photo_menu, menu.menu)
+        menu.setOnMenuItemClickListener(object: PopupMenu.OnMenuItemClickListener{
+            override fun onMenuItemClick(item: MenuItem?): Boolean {
+                when(item?.itemId){
+                    R.id.Photo_Delete ->{
+                        val call = PhotoApiObject.retrofitService.DeletePhoto(gridItem._id)
+                        call.enqueue(object: retrofit2.Callback<Objects> {
+                            override fun onFailure(call: Call<Objects>, t: Throwable) {
+                                println("실패")
+                            }
+                            override fun onResponse(call: Call<Objects>, response: retrofit2.Response<Objects>) {
+                                println(response.body())
+                                mAdapter.deleteItem(gridItem)
+                            }
+                        })
+                    }
+                    else ->{
+                        return false
+                    }
+                }
+                return false
+            }
+
+        })
+        menu.show()
+    }
+
+    private fun imageToString(bitmap: Bitmap): String {
+//        val `in`: InputStream? = requireActivity().contentResolver.openInputStream(path)
+//        val bitmap = BitmapFactory.decodeStream(`in`)
+//        val bmpCompressed = Bitmap.createScaledBitmap(bitmap, 500, 500, true)
+        val byteArrayOutputStream = ByteArrayOutputStream()
+        //bitmap을 압축한다 -> JPEG로, 70%로, byteArrayOutputStream은 데이터를 내보내는 기능
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 40, byteArrayOutputStream)
+        //imgBytes -> 이러한 압축된 파일을 ByteArray형식으로 만든 형태다
+        val imgBytes = byteArrayOutputStream.toByteArray()
+        //이러한 ByteArray를 Base64로 변환한 형태를 리턴한다
+        return Base64.encodeToString(imgBytes, Base64.DEFAULT)
     }
 
 //    fun sendcurrentpostion(): Int {

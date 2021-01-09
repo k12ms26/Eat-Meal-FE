@@ -9,18 +9,25 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
 import android.util.Log
+import android.view.MenuItem
 import android.view.MotionEvent
+import android.view.View
 import android.widget.Toast
+import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.GravityCompat
+import androidx.drawerlayout.widget.DrawerLayout
 import androidx.viewpager.widget.ViewPager
 import androidx.viewpager.widget.ViewPager.OnPageChangeListener
 import com.example.tabtest.ui.main.FragmentLifecycle
 import com.example.tabtest.ui.main.SectionsPagerAdapter
+import com.google.android.material.navigation.NavigationView
 import com.google.android.material.tabs.TabLayout
-import java.lang.Exception
 import java.util.*
+
 
 class MainActivity : AppCompatActivity(), LocationListener {
     lateinit var locationManager: LocationManager
@@ -32,6 +39,8 @@ class MainActivity : AppCompatActivity(), LocationListener {
     var mGeocoder : Geocoder? = null
     var state: String = ""//"대전광역시"
     var city: String = ""//"유성구"
+
+    private lateinit var mDrawerLayout: DrawerLayout
 
     ///GESTURE
     private val OnTouchListener= ArrayList<MyOnTouchListener>()
@@ -83,7 +92,47 @@ class MainActivity : AppCompatActivity(), LocationListener {
         viewPager.setOnPageChangeListener(pageChangeListener)
 
 
+        val toolbar: Toolbar = findViewById(R.id.tool_bar)
+        setSupportActionBar(toolbar)
+        val actionBar: ActionBar? = supportActionBar
+//        actionBar?.setDisplayShowTitleEnabled(false) // 기존 title 지우기
 
+        actionBar?.setDisplayHomeAsUpEnabled(true) // 뒤로가기 버튼 만들기
+
+        actionBar?.setHomeAsUpIndicator(R.drawable.ic_add) //뒤로가기 버튼 이미지 지정
+
+
+        mDrawerLayout = findViewById(R.id.drawer_layout)
+
+        val navigationView = findViewById<View>(R.id.nav_view) as NavigationView
+        navigationView.setNavigationItemSelectedListener(object : NavigationView.OnNavigationItemSelectedListener {
+            override fun onNavigationItemSelected(menuItem: MenuItem): Boolean {
+                menuItem.setChecked(true)
+                mDrawerLayout.closeDrawers()
+                val id: Int = menuItem.getItemId()
+                val title: String = menuItem.getTitle().toString()
+                if (id == R.id.account) {
+                    Toast.makeText(this@MainActivity, "$title: 계정 정보를 확인합니다.", Toast.LENGTH_SHORT).show()
+                } else if (id == R.id.setting) {
+                    Toast.makeText(this@MainActivity, "$title: 설정 정보를 확인합니다.", Toast.LENGTH_SHORT).show()
+                } else if (id == R.id.logout) {
+                    Toast.makeText(this@MainActivity, "$title: 로그아웃 시도중", Toast.LENGTH_SHORT).show()
+                }
+                return true
+            }
+        })
+
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            android.R.id.home -> {
+                // 왼쪽 상단 버튼 눌렀을 때
+                mDrawerLayout.openDrawer(GravityCompat.START)
+                return true
+            }
+        }
+        return super.onOptionsItemSelected(item)
     }
 
 
