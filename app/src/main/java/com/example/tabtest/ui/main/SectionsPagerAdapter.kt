@@ -40,4 +40,10 @@ class SectionsPagerAdapter(private val context: Context, fm: FragmentManager)
         // Show 2 total pages.
         return 3
     }
+
+    fun getFragment(): Array<Fragment> {
+        return TAB_FRAG
+    }
+
+
 }

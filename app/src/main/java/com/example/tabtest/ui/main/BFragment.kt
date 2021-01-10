@@ -45,6 +45,10 @@ public data class Photo (
         val image: String
 )
 
+public data class DeletePhoto(
+        val message: String
+)
+
 //public data class serverPhoto(
 //        val _id: String,
 //        val user: String,
@@ -77,7 +81,7 @@ public interface PhotoInterface{
     @DELETE("api/photos/{id}")
     fun DeletePhoto(
             @Path("id") id: String?
-    ): Call<Objects>
+    ): Call<DeletePhoto>
 
 }
 
@@ -118,6 +122,12 @@ class BFragment : Fragment(), FragmentLifecycle, CellClickListner {
             layoutManager = GridLayoutManager(context,GridItemCount)
         }
         val button: ImageButton = view.findViewById(R.id.add_btn)
+
+        val user = Firebase.auth.currentUser
+        if (user == null) {
+            button.visibility = View.GONE
+        }
+
         button.setOnClickListener {
             dispatchTakePictureIntent()
             println("Touch")
@@ -443,9 +453,16 @@ class BFragment : Fragment(), FragmentLifecycle, CellClickListner {
                                                 TODO("Not yet implemented")
                                             }
                                             override fun onResponse(call: Call<CreatePhoto>, response: retrofit2.Response<CreatePhoto>) {
-                                                NewPhoto._id = response.body()?.id
+
 //                                                println(NewContact._id)
-                                                mAdapter.addItem(NewPhoto)
+                                                Log.d("ADD", response.body()!!.result)
+                                                response.body()?.result?.let {
+                                                    if (response.body()?.result == "1") {
+                                                        Log.d("ADD", response.body()!!.result)
+                                                        NewPhoto._id = response.body()?.id
+                                                        mAdapter.addItem(NewPhoto)
+                                                    }
+                                                }
                                             }
                                         })
 
@@ -466,9 +483,16 @@ class BFragment : Fragment(), FragmentLifecycle, CellClickListner {
                                             TODO("Not yet implemented")
                                         }
                                         override fun onResponse(call: Call<CreatePhoto>, response: retrofit2.Response<CreatePhoto>) {
-                                            NewPhoto._id = response.body()?.id
+
 //                                                println(NewContact._id)
-                                            mAdapter.addItem(NewPhoto)
+                                            Log.d("ADD", response.body()!!.result)
+                                            response.body()?.result?.let {
+                                                if (response.body()?.result == "1") {
+                                                    Log.d("ADD", response.body()!!.result)
+                                                    NewPhoto._id = response.body()?.id
+                                                    mAdapter.addItem(NewPhoto)
+                                                }
+                                            }
                                         }
                                     })
 
@@ -522,13 +546,19 @@ class BFragment : Fragment(), FragmentLifecycle, CellClickListner {
                 when(item?.itemId){
                     R.id.Photo_Delete ->{
                         val call = PhotoApiObject.retrofitService.DeletePhoto(gridItem._id)
-                        call.enqueue(object: retrofit2.Callback<Objects> {
-                            override fun onFailure(call: Call<Objects>, t: Throwable) {
+                        call.enqueue(object: retrofit2.Callback<DeletePhoto> {
+                            override fun onFailure(call: Call<DeletePhoto>, t: Throwable) {
                                 println("실패")
                             }
-                            override fun onResponse(call: Call<Objects>, response: retrofit2.Response<Objects>) {
+                            override fun onResponse(call: Call<DeletePhoto>, response: retrofit2.Response<DeletePhoto>) {
                                 println(response.body())
-                                mAdapter.deleteItem(gridItem)
+                                response.body()?.message?.let {
+                                    if (response.body()?.message == "photo deleted") {
+                                        Log.d("ADD", response.body()!!.message)
+                                        mAdapter.deleteItem(gridItem)
+                                    }
+                                }
+
                             }
                         })
                     }
@@ -549,7 +579,7 @@ class BFragment : Fragment(), FragmentLifecycle, CellClickListner {
 //        val bmpCompressed = Bitmap.createScaledBitmap(bitmap, 500, 500, true)
         val byteArrayOutputStream = ByteArrayOutputStream()
         //bitmap을 압축한다 -> JPEG로, 70%로, byteArrayOutputStream은 데이터를 내보내는 기능
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 40, byteArrayOutputStream)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, byteArrayOutputStream)
         //imgBytes -> 이러한 압축된 파일을 ByteArray형식으로 만든 형태다
         val imgBytes = byteArrayOutputStream.toByteArray()
         //이러한 ByteArray를 Base64로 변환한 형태를 리턴한다

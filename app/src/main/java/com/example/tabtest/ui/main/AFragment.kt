@@ -46,7 +46,9 @@ object ContactApiObject {
     }
 }
 
-
+public data class DeleteContact(
+        val message: String
+)
 
 public data class Contact (
         val user: String?,
@@ -90,7 +92,7 @@ public interface ContactInterface{
     @DELETE("api/contacts/{id}")
     fun DeleteContact(
             @Path("id") id: String?
-    ): Call<Objects>
+    ): Call<DeleteContact>
 
     @PUT("api/contacts/{id}")
     fun ModifyContact(
@@ -130,7 +132,18 @@ class AFragment : Fragment(), SearchView.OnQueryTextListener, FragmentLifecycle,
         val textView: TextView = root.findViewById(R.id.section_label)
 //        val swipeRefreshLayout: SwipeRefreshLayout = root.findViewById(R.id.srl_main)
 
+
+
         val button: ImageButton = root.findViewById(R.id.contact_add)
+
+        val user = Firebase.auth.currentUser
+        println(user)
+        if (user == null) {
+            Log.d("UserInfo", "gone")
+            button.visibility = View.GONE
+        }
+
+
         button.setOnClickListener {
             val mDialog = ContactAddDialog() // make dialog object
             mDialog.show(requireFragmentManager(), "CONTACT ADD") //dialog show
@@ -373,13 +386,19 @@ class AFragment : Fragment(), SearchView.OnQueryTextListener, FragmentLifecycle,
                     }
                     R.id.Delete ->{
                         val call = ContactApiObject.retrofitService.DeleteContact(contact._id)
-                        call.enqueue(object: retrofit2.Callback<Objects> {
-                            override fun onFailure(call: Call<Objects>, t: Throwable) {
+                        call.enqueue(object: retrofit2.Callback<DeleteContact> {
+                            override fun onFailure(call: Call<DeleteContact>, t: Throwable) {
                                 println("실패")
                             }
-                            override fun onResponse(call: Call<Objects>, response: retrofit2.Response<Objects>) {
+                            override fun onResponse(call: Call<DeleteContact>, response: retrofit2.Response<DeleteContact>) {
                                 println(response.body())
-                                mAdapter.deleteItem(contact)
+                                response.body()?.message?.let {
+                                    if (response.body()?.message == "contact deleted") {
+                                        Log.d("ADD", response.body()!!.message)
+                                        mAdapter.deleteItem(contact)
+                                    }
+                                }
+
                             }
                         })
                     }

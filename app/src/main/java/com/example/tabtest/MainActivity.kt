@@ -1,49 +1,60 @@
 package com.example.tabtest
 
-import android.Manifest
-import android.content.Context
-import android.content.pm.PackageManager
-import android.location.Geocoder
-import android.location.Location
-import android.location.LocationListener
-import android.location.LocationManager
+import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
+import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
+import androidx.fragment.app.FragmentTransaction
 import androidx.viewpager.widget.ViewPager
 import androidx.viewpager.widget.ViewPager.OnPageChangeListener
-import com.example.tabtest.ui.main.FragmentLifecycle
-import com.example.tabtest.ui.main.SectionsPagerAdapter
+import com.example.tabtest.ui.main.*
+import com.facebook.AccessToken
+import com.facebook.CallbackManager
+import com.facebook.FacebookCallback
+import com.facebook.FacebookException
+import com.facebook.login.LoginManager
+import com.facebook.login.LoginResult
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.tabs.TabLayout
+import com.google.firebase.auth.FacebookAuthProvider
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.ktx.Firebase
+import java.io.InputStream
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.*
 
 
-class MainActivity : AppCompatActivity(), LocationListener {
-    lateinit var locationManager: LocationManager
-    private val locationPermissionCode = 2
-    var Latitude = ""//"37.532600"
-    var Longtitude = ""//"127.024612"
+class MainActivity : AppCompatActivity() {
     private lateinit var sectionsPagerAdapter: SectionsPagerAdapter
-    var location : Location? = null
-    var mGeocoder : Geocoder? = null
-    var state: String = ""//"대전광역시"
-    var city: String = ""//"유성구"
 
     private lateinit var mDrawerLayout: DrawerLayout
 
+    private lateinit var callbackManager: CallbackManager
+//    private lateinit var loginButton: LoginButton
+    private lateinit var auth: FirebaseAuth
+
+
+
+
     ///GESTURE
     private val OnTouchListener= ArrayList<MyOnTouchListener>()
+
 
     public interface MyOnTouchListener{
         fun OnTouch(ev: MotionEvent?)
@@ -78,6 +89,38 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
+        auth = Firebase.auth
+        callbackManager = CallbackManager.Factory.create()
+//        loginButton = findViewById<View>(R.id.buttonFacebookLogin) as LoginButton
+//        val logoutButton: Button = findViewById<Button>(R.id.buttonFacebookSignout)
+//        loginButton.setReadPermissions("email")
+//        logoutButton.setOnClickListener(this)
+
+
+//        val user = Firebase.auth.currentUser
+//        if (user != null) {
+//            val profileName: TextView = findViewById(R.id.facebook_name)
+//            profileName.text = user.displayName
+//        }
+
+
+//        if (Firebase.auth.currentUser != null){
+//            val fragmentManager: FragmentManager = getSupportFragmentManager()
+//            for (i in 0 until fragmentManager.backStackEntryCount) {
+//                fragmentManager.popBackStack()
+//            }
+//            val importAFragment: Fragment = AFragment()
+//            val importBFragment: Fragment = BFragment()
+//            val importCFragment: Fragment = CFragment()
+//            val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
+//            fragmentTransaction.add(R.id.Afragment, importAFragment)
+//            fragmentTransaction.add(R.id.Bfragment, importBFragment)
+//            fragmentTransaction.add(R.id.Cfragment, importCFragment)
+////                        fragmentTransaction.addToBackStack(null)
+//            fragmentTransaction.commit()
+//        }
+
         super.onCreate(savedInstanceState)
 //        mGeocoder = Geocoder(this)
 //        getLocation()
@@ -86,6 +129,7 @@ class MainActivity : AppCompatActivity(), LocationListener {
         sectionsPagerAdapter = SectionsPagerAdapter(this, supportFragmentManager)
         val viewPager: ViewPager = findViewById(R.id.view_pager)
         viewPager.adapter = sectionsPagerAdapter // viewpager adapter 설정
+        viewPager.setOffscreenPageLimit(2)
         val tabs: TabLayout = findViewById(R.id.tabs)
         tabs.setupWithViewPager(viewPager) // pager와 tab layout 연결
 
@@ -104,19 +148,48 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
         mDrawerLayout = findViewById(R.id.drawer_layout)
 
+        val user = Firebase.auth.currentUser
+//        if (user != null) {
+//            val profileName: TextView = findViewById(R.id.facebook_name)
+//            profileName.text = user.displayName
+//        }
+
         val navigationView = findViewById<View>(R.id.nav_view) as NavigationView
         navigationView.setNavigationItemSelectedListener(object : NavigationView.OnNavigationItemSelectedListener {
             override fun onNavigationItemSelected(menuItem: MenuItem): Boolean {
-                menuItem.setChecked(true)
-                mDrawerLayout.closeDrawers()
+                menuItem.setChecked(false)
+//                mDrawerLayout.closeDrawers()
                 val id: Int = menuItem.getItemId()
                 val title: String = menuItem.getTitle().toString()
                 if (id == R.id.account) {
-                    Toast.makeText(this@MainActivity, "$title: 계정 정보를 확인합니다.", Toast.LENGTH_SHORT).show()
+                    println("로그인!")
+//                    LoginManager.getInstance().setReadPermissions("email")
+                    LoginManager.getInstance().logInWithReadPermissions(this@MainActivity, mutableListOf("email", "public_profile"))
+
+                    LoginManager.getInstance().registerCallback(callbackManager, object : FacebookCallback<LoginResult> {
+                        override fun onSuccess(loginResult: LoginResult) {
+                            handleFacebookAccessToken(loginResult.accessToken)
+                            navigationView.menu.findItem(R.id.account).setEnabled(false)
+                            navigationView.menu.findItem(R.id.setting).setEnabled(true)
+//                            navigationView.menu.findItem(R.id.setting).setEnabled()
+//                            logoutButton.visibility = View.VISIBLE
+                        }
+
+                        override fun onCancel() {
+                            // App code
+                        }
+
+                        override fun onError(exception: FacebookException) {
+                            // App code
+                        }
+                    })
+
                 } else if (id == R.id.setting) {
-                    Toast.makeText(this@MainActivity, "$title: 설정 정보를 확인합니다.", Toast.LENGTH_SHORT).show()
-                } else if (id == R.id.logout) {
-                    Toast.makeText(this@MainActivity, "$title: 로그아웃 시도중", Toast.LENGTH_SHORT).show()
+                    println("로그아웃!")
+                    signOut()
+                    navigationView.menu.findItem(R.id.account).setEnabled(true)
+                    navigationView.menu.findItem(R.id.setting).setEnabled(false)
+
                 }
                 return true
             }
@@ -129,6 +202,20 @@ class MainActivity : AppCompatActivity(), LocationListener {
             android.R.id.home -> {
                 // 왼쪽 상단 버튼 눌렀을 때
                 mDrawerLayout.openDrawer(GravityCompat.START)
+                val user = Firebase.auth.currentUser
+                if (user != null) {
+                    val profileName: TextView = findViewById(R.id.facebook_name)
+                    profileName.text = user.displayName
+                    val profilePhoto: ImageView = findViewById(R.id.facebook_Photo)
+//                    getBitmapFromURL(user.photoUrl.toString(), profilePhoto)
+                    val navigationView = findViewById<View>(R.id.nav_view) as NavigationView
+                    navigationView.menu.findItem(R.id.account).setEnabled(false)
+                    navigationView.menu.findItem(R.id.setting).setEnabled(true)
+
+
+                }
+
+
                 return true
             }
         }
@@ -137,140 +224,147 @@ class MainActivity : AppCompatActivity(), LocationListener {
 
 
 
+    private fun handleFacebookAccessToken(token: AccessToken) {
+        Log.d("TAG", "handleFacebookAccessToken:$token")
 
-//    override fun onResume(){
-//        super.onResume()
-//        getLocation()
+        val credential = FacebookAuthProvider.getCredential(token.token)
+        auth.signInWithCredential(credential)
+                .addOnCompleteListener(this) { task ->
+                    if (task.isSuccessful) {
+                        // Sign in success, update UI with the signed-in user's information
+                        Log.d("TAG", "signInWithCredential:success")
+                        val user = Firebase.auth.currentUser
+                        val profileName: TextView = findViewById(R.id.facebook_name)
+                        user?.let {
+                            // Name, email address, and profile photo Url
+                            val name = it.displayName
+                            println(name)
+                            profileName.text = name
+                            val email = user.email
+                            val photoUrl = user.photoUrl
+                            val profilePhoto: ImageView = findViewById(R.id.facebook_Photo)
+//                            getBitmapFromURL(user.photoUrl.toString(),profilePhoto)
+
+                            // Check if user's email is verified
+                            val emailVerified = user.isEmailVerified
+
+                            // The user's ID, unique to the Firebase project. Do NOT use this value to
+                            // authenticate with your backend server, if you have one. Use
+                            // FirebaseUser.getToken() instead.
+                            val uid = user.uid
+                        }
+
+                        val fragmentManager: FragmentManager = getSupportFragmentManager()
+                        for (i in 0 until fragmentManager.backStackEntryCount) {
+                            fragmentManager.popBackStack()
+                        }
+
+                        val importAFragment: Fragment = AFragment()
+                        val importBFragment: Fragment = BFragment()
+                        val importCFragment: Fragment = CFragment()
+                        val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
+                        fragmentTransaction.replace(R.id.Afragment, importAFragment)
+                        fragmentTransaction.replace(R.id.Bfragment, importBFragment)
+                        fragmentTransaction.replace(R.id.Cfragment, importCFragment)
+//                        fragmentTransaction.addToBackStack(null)
+                        fragmentTransaction.commit()
+
+
+//                        for (fragment in sectionsPagerAdapter.getFragment()){
+//
+//                        }
+
+
+
+
+//                        val intent: Intent = Intent(this@LoginActivity, MainActivity::class.java)
+//                        startActivity(intent)
+//                    println(getString(R.string.firebase_status_fmt, user.uid))
+//                    updateUI(user)
+                    } else {
+                        // If sign in fails, display a message to the user.
+                        Log.w("TAG", "signInWithCredential:failure", task.exception)
+                        Toast.makeText(
+                                baseContext, "Authentication failed.",
+                                Toast.LENGTH_SHORT
+                        ).show()
+//                    updateUI(null)
+                    }
+
+                    // ...
+                }
+    }
+
+    override fun onActivityResult(
+            requestCode: Int,
+            resultCode: Int,
+            data: Intent?
+    ) {
+        callbackManager.onActivityResult(requestCode, resultCode, data)
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    fun signOut() {
+        auth.signOut()
+        println("auth로그아웃")
+        println(auth.currentUser)
+        LoginManager.getInstance().logOut()
+        val profileName: TextView = findViewById(R.id.facebook_name)
+        profileName.text = ""
+        val profilePhoto: ImageView = findViewById(R.id.facebook_Photo)
+        profilePhoto.setImageResource(R.mipmap.ic_launcher_round)
+
+        val fragmentManager: FragmentManager = getSupportFragmentManager()
+        for (i in 0 until fragmentManager.backStackEntryCount) {
+            fragmentManager.popBackStack()
+        }
+
+
+        val importAFragment: Fragment = AFragment()
+        val importBFragment: Fragment = BFragment()
+        val importCFragment: Fragment = CFragment()
+        val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
+        fragmentTransaction.replace(R.id.Afragment, importAFragment)
+        fragmentTransaction.replace(R.id.Bfragment, importBFragment)
+        fragmentTransaction.replace(R.id.Cfragment, importCFragment)
+//        fragmentTransaction.addToBackStack(null)
+        fragmentTransaction.commit()
+
+    }
+
+    fun getBitmapFromURL(src: String?, v: ImageView) {
+
+        var bitmap : Bitmap? = null
+        val thread = Thread(Runnable {
+            try {
+                try {
+                    //uncomment below line in image name have spaces.
+                    //src = src.replaceAll(" ", "%20");
+                    println(src)
+                    val url = URL(src)
+                    val connection: HttpURLConnection = url
+                            .openConnection() as HttpURLConnection
+                    connection.setDoInput(true)
+                    connection.connect()
+                    val input: InputStream = connection.getInputStream()
+                    bitmap = BitmapFactory.decodeStream(input)
+                    v.setImageBitmap(bitmap)
+                } catch (e: Exception) {
+                    Log.d("vk21", e.toString())
+                }
+            } catch (e: java.lang.Exception) {
+                e.printStackTrace()
+            }
+        })
+
+        thread.start()
+    }
+
+//    override fun onClick(v: View?) {
+//        if(v?.id == R.id.buttonFacebookSignout){
+//            signOut()
+//        }
 //    }
 
-    @Synchronized public fun getGeo(){
-        try{
-            println("${Locale.getDefault().getDisplayLanguage()}") // 한국어, English
-            val language = Locale.getDefault().getDisplayLanguage()
-            println("getGeo ok")
-            if(Latitude == "" || Longtitude == ""){
-                println("Latitude and Longitude has nothing!!")
-                getLocation()
-            }
-            if(language == "English") {
-                println("Latitude is $Latitude")
-                println("lognitude is $Longtitude")
-                val resultList = mGeocoder?.getFromLocation(Latitude.toDouble(), Longtitude.toDouble(), 5)
-                Log.d("getGeo Complete", "${resultList?.get(0)?.getAddressLine(0)}")
-                val resultAddress = resultList?.get(0)?.getAddressLine(0).toString().split(", ")
-                val country = resultAddress[resultAddress.size - 1]
-                state = resultAddress[resultAddress.size - 2]
-                city = resultAddress[resultAddress.size - 3]
-            }
-            else{ //korea
-                println("Latitude is $Latitude")
-                println("lognitude is $Longtitude")
-                val resultList = mGeocoder?.getFromLocation(Latitude.toDouble(), Longtitude.toDouble(), 5)
-                Log.d("getGeo Complete", "${resultList?.get(0)?.getAddressLine(0)}")
-                val resultAddress = resultList?.get(0)?.getAddressLine(0).toString().split(" ")
-                val country = resultAddress[0]
-                state = resultAddress[1]
-                city = resultAddress[2]
-            }
-        }catch (e : Exception){
-            Log.d("Error", "주소 변환 실패")
-        }
-    }
 
-    @Synchronized public fun getLocation() {
-        println("Get Location")
-        locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        val isGPSEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)
-        val isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
-        if ((ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED)
-        ) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION),
-                locationPermissionCode
-            )
-        }
-        else { //Permission Granted
-            println("Permission is OK")
-            location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER)
-            if(location == null){
-                Log.d("Error", "LastKnownLocation is null")
-                Latitude = "37.532600"
-                Longtitude = "127.024612"
-//                state = "서울특별시"
-//                city = "영등포구"
-            }
-            else {
-                Latitude = location?.latitude.toString()
-                Longtitude = location?.longitude.toString()
-                getGeo()
-            }
-
-            if (isGPSEnabled || isNetworkEnabled) {
-                println("Gps is Enabled")
-                if(locationManager != null) {
-                    try {
-                        locationManager.requestLocationUpdates(
-                            LocationManager.GPS_PROVIDER,
-                            0,
-                            0f,
-                            this
-                        )
-                        locationManager.requestLocationUpdates(
-                                LocationManager.NETWORK_PROVIDER,
-                                0,
-                                0f,
-                                this)
-
-                        Log.d("Success", "RequestLocationUpdates Success")
-                    }
-                    catch (e : Exception){
-                        Log.d("Error", "Cannot RequestLocationUpdates")
-                    }
-                }
-                else{
-                    println("Error : Location Manager is null")
-                }
-            }
-            else {
-                println("Error : Please turn on the GPS")
-            }
-        }
-    }
-
-    override fun onLocationChanged(location: Location) {
-        println("onLocationChaged !!")
-        println("Latitude = $Latitude")
-        println("Longitude = $Longtitude")
-        Latitude = location.latitude.toString()
-        Longtitude = location.longitude.toString()
-        getGeo()
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        if (requestCode == locationPermissionCode) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "Permission Granted", Toast.LENGTH_SHORT).show()
-                getLocation()
-            }
-            else {
-                Toast.makeText(this, "Permission Denied", Toast.LENGTH_SHORT).show()
-            }
-        }
-    }
-
-    public fun getLat() : String{
-        return Latitude
-    }
-
-    public fun getLng() : String{
-        return Longtitude
-    }
-
-    fun getAddress() : String{
-        return "$state $city"
-    }
 }
