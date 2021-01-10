@@ -168,6 +168,7 @@ class MainActivity : AppCompatActivity() {
 
                     LoginManager.getInstance().registerCallback(callbackManager, object : FacebookCallback<LoginResult> {
                         override fun onSuccess(loginResult: LoginResult) {
+//                            Log.d("token", loginResult.accessToken.token)
                             handleFacebookAccessToken(loginResult.accessToken)
                             navigationView.menu.findItem(R.id.account).setEnabled(false)
                             navigationView.menu.findItem(R.id.setting).setEnabled(true)
@@ -207,12 +208,21 @@ class MainActivity : AppCompatActivity() {
                     val profileName: TextView = findViewById(R.id.facebook_name)
                     profileName.text = user.displayName
                     val profilePhoto: ImageView = findViewById(R.id.facebook_Photo)
-//                    getBitmapFromURL(user.photoUrl.toString(), profilePhoto)
+                    println(user.photoUrl)
+                    getBitmapFromURL(user.photoUrl.toString(), profilePhoto)
                     val navigationView = findViewById<View>(R.id.nav_view) as NavigationView
                     navigationView.menu.findItem(R.id.account).setEnabled(false)
                     navigationView.menu.findItem(R.id.setting).setEnabled(true)
+                }
 
-
+                if (user == null) {
+                    val profileName: TextView = findViewById(R.id.facebook_name)
+                    profileName.text = ""
+                    val profilePhoto: ImageView = findViewById(R.id.facebook_Photo)
+                    profilePhoto.setImageResource(R.mipmap.ic_launcher_round)
+                    val navigationView = findViewById<View>(R.id.nav_view) as NavigationView
+                    navigationView.menu.findItem(R.id.account).setEnabled(true)
+                    navigationView.menu.findItem(R.id.setting).setEnabled(false)
                 }
 
 
@@ -243,7 +253,7 @@ class MainActivity : AppCompatActivity() {
                             val email = user.email
                             val photoUrl = user.photoUrl
                             val profilePhoto: ImageView = findViewById(R.id.facebook_Photo)
-//                            getBitmapFromURL(user.photoUrl.toString(),profilePhoto)
+                            getBitmapFromURL(user.photoUrl.toString(),profilePhoto)
 
                             // Check if user's email is verified
                             val emailVerified = user.isEmailVerified
@@ -337,11 +347,10 @@ class MainActivity : AppCompatActivity() {
         var bitmap : Bitmap? = null
         val thread = Thread(Runnable {
             try {
-                try {
                     //uncomment below line in image name have spaces.
                     //src = src.replaceAll(" ", "%20");
                     println(src)
-                    val url = URL(src)
+                    val url = URL(src + "/?access_token="+AccessToken.getCurrentAccessToken().token)
                     val connection: HttpURLConnection = url
                             .openConnection() as HttpURLConnection
                     connection.setDoInput(true)
@@ -349,11 +358,8 @@ class MainActivity : AppCompatActivity() {
                     val input: InputStream = connection.getInputStream()
                     bitmap = BitmapFactory.decodeStream(input)
                     v.setImageBitmap(bitmap)
-                } catch (e: Exception) {
+                } catch (e: java.lang.Exception) {
                     Log.d("vk21", e.toString())
-                }
-            } catch (e: java.lang.Exception) {
-                e.printStackTrace()
             }
         })
 

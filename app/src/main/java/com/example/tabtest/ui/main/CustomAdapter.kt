@@ -28,7 +28,7 @@ class CustomAdapter(val ContactClickListner: ContactClickListner): RecyclerView.
         notifyDataSetChanged()
     }
 
-    @Synchronized
+
     fun bindItem(items: ArrayList<ContactModel>){
 
         this.items = items
@@ -65,7 +65,7 @@ class CustomAdapter(val ContactClickListner: ContactClickListner): RecyclerView.
             menu?.add(0, v!!.getId(), 0, "SMS");
         }
 
-        @Synchronized fun bindItem(contactModel: ContactModel, ContactClickListner: ContactClickListner) {
+        fun bindItem(contactModel: ContactModel, ContactClickListner: ContactClickListner) {
 //                if(contactModel.photoUri!= ""){
 //                val resourceId = context.resources.getIdentifier(contactModel.photoUri, "drawble", context.packageName)
 //
@@ -110,7 +110,6 @@ class CustomAdapter(val ContactClickListner: ContactClickListner): RecyclerView.
 //                userPay.text = dataVo.pay.toString()
 //                userAddress.text = dataVo.address
     }
-    @Synchronized
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ContactsViewHolder {
         val view = LayoutInflater.from(parent.context).inflate(R.layout.view_item_layout, parent, false)
 //        val holder = GridRecyclerAdapter.ItemViewHolder(LayoutInflater.from(parent.context).inflate(R.layout.grid_image, parent, false))
@@ -120,11 +119,11 @@ class CustomAdapter(val ContactClickListner: ContactClickListner): RecyclerView.
 //        }
         return ContactsViewHolder(view)
     }
-    @Synchronized
+
     override fun onBindViewHolder(holder: ContactsViewHolder, position: Int) {
         holder.bindItem(items[position], ContactClickListner)
     }
-    @Synchronized
+
     override fun getItemCount(): Int {
         return items.size
     }
@@ -140,7 +139,7 @@ class CustomAdapter(val ContactClickListner: ContactClickListner): RecyclerView.
      * @param s the search query or text. It can be null.
      * @param onNothingFound a method-body to invoke when search returns nothing. It can be null.
      */
-    @Synchronized
+
     fun search(s: String?, onNothingFound: (() -> Unit)?) {
         this.onNothingFound = onNothingFound
         filter.filter(s)
@@ -148,7 +147,6 @@ class CustomAdapter(val ContactClickListner: ContactClickListner): RecyclerView.
     }
 
 
-    @Synchronized
     override fun getFilter(): Filter {
         return object : Filter() {
             override fun performFiltering(charSequence: CharSequence): FilterResults {
