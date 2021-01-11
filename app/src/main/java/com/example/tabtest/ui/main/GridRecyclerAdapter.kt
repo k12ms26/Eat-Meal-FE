@@ -1,6 +1,5 @@
 package com.example.tabtest.ui.main
 
-import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Base64
@@ -10,10 +9,10 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 import com.example.tabtest.R
 import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 
 class GridRecyclerAdapter(private val cellClickListner: CellClickListner) : RecyclerView.Adapter<GridRecyclerAdapter.ItemViewHolder>() {
 
@@ -86,7 +85,8 @@ class GridRecyclerAdapter(private val cellClickListner: CellClickListner) : Recy
         }
 
         fun bind(gridItem: GridItem){
-            image.setImageBitmap(stringToImage(gridItem.image))
+//            image.setImageBitmap(compressBitmap(stringToImage(gridItem.image)))
+            image.setImageBitmap(ReduceBitmap(stringToImage(gridItem.image)))
 //                notifyDataSetChanged()
             Log.d("Success", "Success to find Image view")
 
@@ -121,6 +121,20 @@ class GridRecyclerAdapter(private val cellClickListner: CellClickListner) : Recy
         Log.d("worked?", "worked!")
         return imageView.setImageBitmap(bm)*/
         //imageView.visibility = View.VISIBLE
+    }
+
+    private fun compressBitmap(bitmap: Bitmap): Bitmap? {
+        val stream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 15, stream)
+        val byteArray: ByteArray = stream.toByteArray()
+        return BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
+    }
+
+    private fun ReduceBitmap(bitmap: Bitmap): Bitmap {
+        val width = bitmap.width
+        val heigth = bitmap.height
+
+        return Bitmap.createScaledBitmap(bitmap, (width*0.3).toInt(), (heigth*0.3).toInt(),true )
     }
 
 }

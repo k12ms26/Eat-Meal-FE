@@ -124,7 +124,9 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 //        mGeocoder = Geocoder(this)
 //        getLocation()
+
         setContentView(R.layout.activity_main) // activity main view 확인
+
         //val sectionsPagerAdapter = SectionsPagerAdapter(this, supportFragmentManager)
         sectionsPagerAdapter = SectionsPagerAdapter(this, supportFragmentManager)
         val viewPager: ViewPager = findViewById(R.id.view_pager)
@@ -145,51 +147,62 @@ class MainActivity : AppCompatActivity() {
 
         actionBar?.setHomeAsUpIndicator(R.drawable.ic_add) //뒤로가기 버튼 이미지 지정
 
-
         mDrawerLayout = findViewById(R.id.drawer_layout)
 
-        val user = Firebase.auth.currentUser
+
 //        if (user != null) {
 //            val profileName: TextView = findViewById(R.id.facebook_name)
 //            profileName.text = user.displayName
 //        }
 
         val navigationView = findViewById<View>(R.id.nav_view) as NavigationView
+
+        val user = Firebase.auth.currentUser
+
+        val parentView = navigationView.getHeaderView(0)
+        val profilePhoto: ImageView = parentView.findViewById(R.id.facebook_Photo)
+        println(user?.photoUrl)
+        getBitmapFromURL(user?.photoUrl.toString(), profilePhoto)
+        val profileName: TextView = parentView.findViewById(R.id.facebook_name)
+        profileName.text = user?.displayName
+
         navigationView.setNavigationItemSelectedListener(object : NavigationView.OnNavigationItemSelectedListener {
             override fun onNavigationItemSelected(menuItem: MenuItem): Boolean {
                 menuItem.setChecked(false)
 //                mDrawerLayout.closeDrawers()
                 val id: Int = menuItem.getItemId()
                 val title: String = menuItem.getTitle().toString()
-                if (id == R.id.account) {
-                    println("로그인!")
-//                    LoginManager.getInstance().setReadPermissions("email")
-                    LoginManager.getInstance().logInWithReadPermissions(this@MainActivity, mutableListOf("email", "public_profile"))
-
-                    LoginManager.getInstance().registerCallback(callbackManager, object : FacebookCallback<LoginResult> {
-                        override fun onSuccess(loginResult: LoginResult) {
-//                            Log.d("token", loginResult.accessToken.token)
-                            handleFacebookAccessToken(loginResult.accessToken)
-                            navigationView.menu.findItem(R.id.account).setEnabled(false)
-                            navigationView.menu.findItem(R.id.setting).setEnabled(true)
-//                            navigationView.menu.findItem(R.id.setting).setEnabled()
-//                            logoutButton.visibility = View.VISIBLE
-                        }
-
-                        override fun onCancel() {
-                            // App code
-                        }
-
-                        override fun onError(exception: FacebookException) {
-                            // App code
-                        }
-                    })
-
-                } else if (id == R.id.setting) {
+//                if (id == R.id.account) {
+//                    println("로그인!")
+////                    LoginManager.getInstance().setReadPermissions("email")
+//                    LoginManager.getInstance().logInWithReadPermissions(this@MainActivity, mutableListOf("email", "public_profile"))
+//
+//                    LoginManager.getInstance().registerCallback(callbackManager, object : FacebookCallback<LoginResult> {
+//                        override fun onSuccess(loginResult: LoginResult) {
+////                            Log.d("token", loginResult.accessToken.token)
+//                            handleFacebookAccessToken(loginResult.accessToken)
+//                            navigationView.menu.findItem(R.id.account).setEnabled(false)
+//                            navigationView.menu.findItem(R.id.setting).setEnabled(true)
+////                            navigationView.menu.findItem(R.id.setting).setEnabled()
+////                            logoutButton.visibility = View.VISIBLE
+//                        }
+//
+//                        override fun onCancel() {
+//                            // App code
+//                        }
+//
+//                        override fun onError(exception: FacebookException) {
+//                            // App code
+//                        }
+//                    })
+//
+//                } else
+                if (id == R.id.setting) {
                     println("로그아웃!")
                     signOut()
-                    navigationView.menu.findItem(R.id.account).setEnabled(true)
-                    navigationView.menu.findItem(R.id.setting).setEnabled(false)
+
+//                    navigationView.menu.findItem(R.id.account).setEnabled(true)
+//                    navigationView.menu.findItem(R.id.setting).setEnabled(false)
 
                 }
                 return true
@@ -203,27 +216,32 @@ class MainActivity : AppCompatActivity() {
             android.R.id.home -> {
                 // 왼쪽 상단 버튼 눌렀을 때
                 mDrawerLayout.openDrawer(GravityCompat.START)
-                val user = Firebase.auth.currentUser
-                if (user != null) {
-                    val profileName: TextView = findViewById(R.id.facebook_name)
-                    profileName.text = user.displayName
-                    val profilePhoto: ImageView = findViewById(R.id.facebook_Photo)
-                    println(user.photoUrl)
-                    getBitmapFromURL(user.photoUrl.toString(), profilePhoto)
-                    val navigationView = findViewById<View>(R.id.nav_view) as NavigationView
-                    navigationView.menu.findItem(R.id.account).setEnabled(false)
-                    navigationView.menu.findItem(R.id.setting).setEnabled(true)
-                }
 
-                if (user == null) {
-                    val profileName: TextView = findViewById(R.id.facebook_name)
-                    profileName.text = ""
-                    val profilePhoto: ImageView = findViewById(R.id.facebook_Photo)
-                    profilePhoto.setImageResource(R.mipmap.ic_launcher_round)
-                    val navigationView = findViewById<View>(R.id.nav_view) as NavigationView
-                    navigationView.menu.findItem(R.id.account).setEnabled(true)
-                    navigationView.menu.findItem(R.id.setting).setEnabled(false)
-                }
+                Log.d("DRAWER","OPEN")
+
+//                val user = Firebase.auth.currentUser
+//                if (user != null) {
+//                    Log.d("USER","USER IS NOT NULL")
+//                    val profileName: TextView = findViewById(R.id.facebook_name)
+//                    profileName.text = user.displayName
+//                    val profilePhoto: ImageView = findViewById(R.id.facebook_Photo)
+//                    println(user.photoUrl)
+//                    getBitmapFromURL(user.photoUrl.toString(), profilePhoto)
+//                    val navigationView = findViewById<View>(R.id.nav_view) as NavigationView
+////                    navigationView.menu.findItem(R.id.account).setEnabled(false)
+//                    navigationView.menu.findItem(R.id.setting).setEnabled(true)
+//                }
+//
+//                if (user == null) {
+//                    Log.d("USER","USER IS NULL")
+//                    val profileName: TextView = findViewById(R.id.facebook_name)
+//                    profileName.text = ""
+//                    val profilePhoto: ImageView = findViewById(R.id.facebook_Photo)
+//                    profilePhoto.setImageResource(R.mipmap.ic_launcher_round)
+//                    val navigationView = findViewById<View>(R.id.nav_view) as NavigationView
+////                    navigationView.menu.findItem(R.id.account).setEnabled(true)
+//                    navigationView.menu.findItem(R.id.setting).setEnabled(false)
+//                }
 
 
                 return true
@@ -264,10 +282,22 @@ class MainActivity : AppCompatActivity() {
                             val uid = user.uid
                         }
 
+
+//                        val intent = Intent(this, MainActivity::class.java)
+//                        startActivity(intent)
+//                        finish()
+
+
+
+
                         val fragmentManager: FragmentManager = getSupportFragmentManager()
                         for (i in 0 until fragmentManager.backStackEntryCount) {
                             fragmentManager.popBackStack()
                         }
+                        sectionsPagerAdapter.getItem(0).onDestroy()
+                        sectionsPagerAdapter.getItem(1).onDestroy()
+                        sectionsPagerAdapter.getItem(2).onDestroy()
+
 
                         val importAFragment: Fragment = AFragment()
                         val importBFragment: Fragment = BFragment()
@@ -275,9 +305,11 @@ class MainActivity : AppCompatActivity() {
                         val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
                         fragmentTransaction.replace(R.id.Afragment, importAFragment)
                         fragmentTransaction.replace(R.id.Bfragment, importBFragment)
+//                        (fragmentManager.findFragmentById(R.id.Bfragment)
                         fragmentTransaction.replace(R.id.Cfragment, importCFragment)
-//                        fragmentTransaction.addToBackStack(null)
+                        fragmentTransaction.addToBackStack(null)
                         fragmentTransaction.commit()
+
 
 
 //                        for (fragment in sectionsPagerAdapter.getFragment()){
@@ -319,26 +351,43 @@ class MainActivity : AppCompatActivity() {
         println("auth로그아웃")
         println(auth.currentUser)
         LoginManager.getInstance().logOut()
+        val intent: Intent = Intent(this, LoginActivity::class.java)
+        startActivity(intent)
+        finish()
         val profileName: TextView = findViewById(R.id.facebook_name)
         profileName.text = ""
         val profilePhoto: ImageView = findViewById(R.id.facebook_Photo)
         profilePhoto.setImageResource(R.mipmap.ic_launcher_round)
+
+
+
+        val navigationView = findViewById<View>(R.id.nav_view) as NavigationView
+//        navigationView.menu.findItem(R.id.account).setEnabled(true)
+        navigationView.menu.findItem(R.id.setting).setEnabled(false)
+
+
 
         val fragmentManager: FragmentManager = getSupportFragmentManager()
         for (i in 0 until fragmentManager.backStackEntryCount) {
             fragmentManager.popBackStack()
         }
 
+//        (sectionsPagerAdapter.getFragment()[1] as BFragment).LoadPhoto()
 
-        val importAFragment: Fragment = AFragment()
-        val importBFragment: Fragment = BFragment()
-        val importCFragment: Fragment = CFragment()
-        val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
-        fragmentTransaction.replace(R.id.Afragment, importAFragment)
-        fragmentTransaction.replace(R.id.Bfragment, importBFragment)
-        fragmentTransaction.replace(R.id.Cfragment, importCFragment)
+//        sectionsPagerAdapter.getItem(0).onDestroy()
+//        sectionsPagerAdapter.getItem(1).onDestroy()
+//        sectionsPagerAdapter.getItem(2).onDestroy()
+//
+//
+//        val importAFragment: Fragment = AFragment()
+//        val importBFragment: Fragment = BFragment()
+//        val importCFragment: Fragment = CFragment()
+//        val fragmentTransaction: FragmentTransaction = fragmentManager.beginTransaction()
+//        fragmentTransaction.replace(R.id.Afragment, importAFragment)
+//        fragmentTransaction.replace(R.id.Bfragment, importBFragment)
+//        fragmentTransaction.replace(R.id.Cfragment, importCFragment)
 //        fragmentTransaction.addToBackStack(null)
-        fragmentTransaction.commit()
+//        fragmentTransaction.commit()
 
     }
 
@@ -350,7 +399,7 @@ class MainActivity : AppCompatActivity() {
                     //uncomment below line in image name have spaces.
                     //src = src.replaceAll(" ", "%20");
                     println(src)
-                    val url = URL(src + "/?access_token="+AccessToken.getCurrentAccessToken().token)
+                    val url = URL(src + "/?type=large&access_token="+AccessToken.getCurrentAccessToken().token)
                     val connection: HttpURLConnection = url
                             .openConnection() as HttpURLConnection
                     connection.setDoInput(true)

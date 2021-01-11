@@ -2,6 +2,7 @@ package com.example.tabtest.ui.main
 
 import android.app.Dialog
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -80,28 +81,43 @@ class ContactModifyDialog : DialogFragment() {
         NameEditText.setText(contactModel.name)
         NumberEditText.setText(contactModel.number)
 
+        val originalName = contactModel.name
+        val originalNumber = contactModel.number
+
         SubmitButton.setOnClickListener {
             val Name: String = NameEditText.text.toString()
             val Number: String = NumberEditText.text.toString()
 //            var NewContact: ContactModel = ContactModel(null, Firebase.auth.currentUser?.uid ,Name, Number)
             contactModel.name = Name
             contactModel.number = Number
-
             val call = ContactApiObject.retrofitService.ModifyContact(contactModel._id, contactModel)
-            call.enqueue(object: retrofit2.Callback<Objects> {
-                override fun onFailure(call: Call<Objects>, t: Throwable) {
-                    TODO("Not yet implemented")
+            call.enqueue(object: retrofit2.Callback<UpdateContact> {
+                override fun onFailure(call: Call<UpdateContact>, t: Throwable) {
+                    contactModel.name = originalName
+                    contactModel.number = originalNumber
                 }
-                override fun onResponse(call: Call<Objects>, response: retrofit2.Response<Objects>) {
+                override fun onResponse(call: Call<UpdateContact>, response: retrofit2.Response<UpdateContact>) {
 //                    NewContact._id = response.body()?.id
 //                    println(NewContact._id)
                     if(response.isSuccessful){
                         println("수정 성공")
-                        mAdapter.notifyDataSetChanged()
+                        response.body()?.message?.let {
+                            if (response.body()?.message == "contact updated") {
+                                mAdapter.notifyDataSetChanged()
+                            }
+                            else{
+                                contactModel.name = originalName
+                                contactModel.number = originalNumber
+                            }
+                            }
+
+
                     }
                     else{
                         println(response.errorBody().toString())
                         println("수정 성공? 실패")
+                        contactModel.name = originalName
+                        contactModel.number = originalNumber
                     }
                 }
             })

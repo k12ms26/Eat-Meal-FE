@@ -1,5 +1,6 @@
 package com.example.tabtest
 
+import android.app.Dialog
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -7,6 +8,7 @@ import android.view.View
 import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.example.tabtest.ui.main.ProgressDialog
 import com.facebook.AccessToken
 import com.facebook.CallbackManager
 import com.facebook.FacebookCallback
@@ -24,7 +26,7 @@ import com.google.firebase.auth.ktx.auth
 //import com.google.firebase.quickstart.auth.databinding.ActivityFacebookBinding
 
 
-class LoginActivity : AppCompatActivity(), View.OnClickListener {
+class LoginActivity : AppCompatActivity() {
     //    override fun onCreate(savedInstanceState: Bundle?) {
 //
 //        super.onCreate(savedInstanceState)
@@ -42,15 +44,16 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
         auth = Firebase.auth
         callbackManager = CallbackManager.Factory.create()
         loginButton = findViewById<View>(R.id.buttonFacebookLogin) as LoginButton
-        val logoutButton: Button = findViewById<Button>(R.id.buttonFacebookSignout)
+//        val logoutButton: Button = findViewById<Button>(R.id.buttonFacebookSignout)
         loginButton.setReadPermissions("email")
-        logoutButton.setOnClickListener(this)
+//        logoutButton.setOnClickListener(this)
 
         val user = Firebase.auth.currentUser
         if (user != null) {
             val intent: Intent = Intent(this@LoginActivity, MainActivity::class.java)
             startActivity(intent)
-            logoutButton.visibility = View.VISIBLE
+            finish()
+//            logoutButton.visibility = View.VISIBLE
         }
 
 
@@ -58,7 +61,7 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
         loginButton.registerCallback(callbackManager, object : FacebookCallback<LoginResult> {
             override fun onSuccess(loginResult: LoginResult) {
                 handleFacebookAccessToken(loginResult.accessToken)
-                logoutButton.visibility = View.VISIBLE
+//                logoutButton.visibility = View.VISIBLE
             }
 
             override fun onCancel() {
@@ -88,7 +91,8 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
 
     private fun handleFacebookAccessToken(token: AccessToken) {
         Log.d("TAG", "handleFacebookAccessToken:$token")
-
+        val LoadingDialog: Dialog = ProgressDialog(this)
+        LoadingDialog.show()
         val credential = FacebookAuthProvider.getCredential(token.token)
         auth.signInWithCredential(credential)
             .addOnCompleteListener(this) { task ->
@@ -110,8 +114,11 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
                         // FirebaseUser.getToken() instead.
                         val uid = user.uid
                     }
+
                     val intent: Intent = Intent(this@LoginActivity, MainActivity::class.java)
                     startActivity(intent)
+                    finish()
+                    LoadingDialog.dismiss()
 //                    println(getString(R.string.firebase_status_fmt, user.uid))
 //                    updateUI(user)
                 } else {
@@ -134,11 +141,11 @@ class LoginActivity : AppCompatActivity(), View.OnClickListener {
 
     }
 
-    override fun onClick(v: View?) {
-        if(v?.id == R.id.buttonFacebookSignout){
-            signOut()
-        }
-    }
+//    override fun onClick(v: View?) {
+//        if(v?.id == R.id.buttonFacebookSignout){
+//            signOut()
+//        }
+//    }
 
 
 }

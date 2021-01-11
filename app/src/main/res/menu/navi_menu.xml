@@ -3,19 +3,18 @@
 
 
 <!--        android:checkableBehavior="single"-->
-        <item
-            android:id="@+id/account"
-            android:icon="@drawable/ic_launcher_foreground"
-            style="@style/TextAppearance.AppCompat.Widget.ActionBar.Title"
-            android:title="login"
-            android:enabled="true"
-            />
+<!--        <item-->
+<!--            android:id="@+id/account"-->
+<!--            android:icon="@drawable/ic_launcher_foreground"-->
+<!--            style="@style/TextAppearance.AppCompat.Widget.ActionBar.Title"-->
+<!--            android:title="login"-->
+<!--            />-->
         <item
             android:id="@+id/setting"
             android:icon="@drawable/ic_launcher_foreground"
             style="@style/TextAppearance.AppCompat.Widget.ActionBar.Title"
             android:title="logout"
-            android:enabled="false"
+
             />
 
 </menu>

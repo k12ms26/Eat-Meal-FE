@@ -7,6 +7,8 @@
     android:layout_height="match_parent"
     tools:context=".ui.main.PlaceholderFragment"
     tools:ignore="MissingDefaultResource"
+    android:layout_weight="1"
+
     >
 
 

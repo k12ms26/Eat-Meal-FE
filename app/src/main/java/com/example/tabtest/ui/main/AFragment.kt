@@ -50,6 +50,10 @@ public data class DeleteContact(
         val message: String
 )
 
+public data class UpdateContact(
+        val message: String
+)
+
 public data class Contact (
         val user: String?,
         val name: String?,
@@ -98,7 +102,7 @@ public interface ContactInterface{
     fun ModifyContact(
             @Path("id") id: String?,
             @Body contact: ContactModel
-    ): Call<Objects>
+    ): Call<UpdateContact>
 }
 
 

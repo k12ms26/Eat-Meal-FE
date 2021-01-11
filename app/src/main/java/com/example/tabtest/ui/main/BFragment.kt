@@ -2,10 +2,12 @@ package com.example.tabtest.ui.main
 
 
 import android.app.Activity.RESULT_OK
+import android.app.Dialog
 import android.content.Intent
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
+import android.graphics.Matrix
+import android.media.ExifInterface
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -31,7 +33,6 @@ import retrofit2.http.*
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.IOException
-import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.ArrayList
@@ -108,6 +109,7 @@ class BFragment : Fragment(), FragmentLifecycle, CellClickListner {
     var tempScale = 100
     var currentScale = 100
     lateinit var mCurrentPhotoPath: String
+    lateinit var Bfrag: View
 
 
 
@@ -117,21 +119,24 @@ class BFragment : Fragment(), FragmentLifecycle, CellClickListner {
     var isIn = false
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val view = layoutInflater.inflate(R.layout.fragment_b, container, false)
+        Bfrag = view
         view.findViewById<RecyclerView>(R.id.recycler_view_grid).apply{
             this.adapter = mAdapter
             layoutManager = GridLayoutManager(context,GridItemCount)
         }
-        val button: ImageButton = view.findViewById(R.id.add_btn)
+//        val button: ImageButton = view.findViewById(R.id.add_btn)
+//
+//        val user = Firebase.auth.currentUser
+//        if (user == null) {
+//            button.visibility = View.GONE
+//        }
+//
+//        button.setOnClickListener {
+//            dispatchTakePictureIntent()
+//            println("Touch")
+//        }
 
-        val user = Firebase.auth.currentUser
-        if (user == null) {
-            button.visibility = View.GONE
-        }
-
-        button.setOnClickListener {
-            dispatchTakePictureIntent()
-            println("Touch")
-        }
+        LoadPhoto()
 
         //// GESTURE START
         (activity as MainActivity).registerMyOnTouchListener(object : MainActivity.MyOnTouchListener{
@@ -298,31 +303,84 @@ class BFragment : Fragment(), FragmentLifecycle, CellClickListner {
         })
 
         //// GESTURE END
-
-        val call = PhotoApiObject.retrofitService.GetUserPhoto(Firebase.auth.currentUser?.uid)
-        call.enqueue(object: retrofit2.Callback<ArrayList<GridItem>> {
-            override fun onFailure(call: Call<ArrayList<GridItem>>, t: Throwable) {
-                println("실패")
-            }
-            override fun onResponse(call: Call<ArrayList<GridItem>>, response: retrofit2.Response<ArrayList<GridItem>>) {
-                println("성공?")
-                println(response.body())
-                if(response.isSuccessful){
-                    response.body()?.let { mAdapter.bindItem(it) }
-                    println("성공")
-                }
-                else{
-                    println("성공?실패")
-
-
-                }
-            }
-        })
+//        val LoadingDialog: Dialog = ProgressDialog(requireContext())
+//        LoadingDialog.show()
+//
+//        val call = PhotoApiObject.retrofitService.GetUserPhoto(Firebase.auth.currentUser?.uid)
+//        call.enqueue(object: retrofit2.Callback<ArrayList<GridItem>> {
+//            override fun onFailure(call: Call<ArrayList<GridItem>>, t: Throwable) {
+//                println("실패")
+//                LoadingDialog.dismiss()
+//            }
+//            override fun onResponse(call: Call<ArrayList<GridItem>>, response: retrofit2.Response<ArrayList<GridItem>>) {
+//                println("성공?")
+//                println(response.body())
+//                if(response.isSuccessful){
+//                    response.body()?.let {
+//                        mAdapter.bindItem(it)
+//                        LoadingDialog.dismiss()
+//                    }
+//                    println("성공")
+//                }
+//                else{
+//                    println("성공?실패")
+//                    LoadingDialog.dismiss()
+//
+//
+//                }
+//            }
+//        })
 
 
 
         return view
     }
+
+    fun LoadPhoto(){
+
+        val button: ImageButton = Bfrag.findViewById(R.id.add_btn)
+
+        val user = Firebase.auth.currentUser
+        if (user == null) {
+            Log.d("PHOTOUSER","GONE")
+            button.visibility = View.GONE
+        }
+
+        button.setOnClickListener {
+            dispatchTakePictureIntent()
+            println("Touch")
+        }
+
+        val LoadingDialog: Dialog = ProgressDialog(requireContext())
+        LoadingDialog.show()
+
+        val call = PhotoApiObject.retrofitService.GetUserPhoto(Firebase.auth.currentUser?.uid)
+        call.enqueue(object: retrofit2.Callback<ArrayList<GridItem>> {
+            override fun onFailure(call: Call<ArrayList<GridItem>>, t: Throwable) {
+                println("실패")
+                LoadingDialog.dismiss()
+            }
+            override fun onResponse(call: Call<ArrayList<GridItem>>, response: retrofit2.Response<ArrayList<GridItem>>) {
+                println("성공?")
+                println(response.body())
+                if(response.isSuccessful){
+                    response.body()?.let {
+                        mAdapter.bindItem(it)
+                        LoadingDialog.dismiss()
+                    }
+                    println("성공")
+                }
+                else{
+                    println("성공?실패")
+                    LoadingDialog.dismiss()
+
+
+                }
+            }
+        })
+    }
+
+
 
 
 //    private fun openGallery(){
@@ -441,16 +499,24 @@ class BFragment : Fragment(), FragmentLifecycle, CellClickListner {
                         if (Build.VERSION.SDK_INT >= 29) {
                             val source = ImageDecoder.createSource(requireActivity().getContentResolver(), Uri.fromFile(file));
                                 try {
-                                    val bitmap = ImageDecoder.decodeBitmap(source);
-                                    if (bitmap != null) {
+                                    val bitmapOrigin = ImageDecoder.decodeBitmap(source);
+                                    if (bitmapOrigin != null) {
 //                                        iv_photo.setImageBitmap(bitmap);
-                                        println(bitmap)
+                                        println(bitmapOrigin)
+
+                                        val exifOrientation = ExifInterface(mCurrentPhotoPath).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+                                        val exifDegree = exifOrientationToDegrees(exifOrientation)
+                                        val bitmap = rotate(bitmapOrigin, exifDegree)
+
                                         file.delete()
+                                        val LoadingDialog: Dialog = ProgressDialog(requireContext())
+                                        LoadingDialog.show()
                                         var NewPhoto = GridItem(null, Firebase.auth.currentUser?.uid, imageToString(bitmap))
                                         val call = PhotoApiObject.retrofitService.CreatePhoto( Photo(Firebase.auth.currentUser?.uid,imageToString(bitmap)))
                                         call.enqueue(object: retrofit2.Callback<CreatePhoto> {
                                             override fun onFailure(call: Call<CreatePhoto>, t: Throwable) {
                                                 TODO("Not yet implemented")
+                                                LoadingDialog.dismiss()
                                             }
                                             override fun onResponse(call: Call<CreatePhoto>, response: retrofit2.Response<CreatePhoto>) {
 
@@ -461,6 +527,10 @@ class BFragment : Fragment(), FragmentLifecycle, CellClickListner {
                                                         Log.d("ADD", response.body()!!.result)
                                                         NewPhoto._id = response.body()?.id
                                                         mAdapter.addItem(NewPhoto)
+                                                        LoadingDialog.dismiss()
+                                                    }
+                                                    else {
+                                                        LoadingDialog.dismiss()
                                                     }
                                                 }
                                             }
@@ -471,11 +541,18 @@ class BFragment : Fragment(), FragmentLifecycle, CellClickListner {
                                 catch (e:IOException) { e.printStackTrace(); } }
                         else {
                             try {
-                                val bitmap = MediaStore.Images.Media.getBitmap(requireActivity().getContentResolver(), Uri.fromFile(file));
-                                if (bitmap != null) {
+                                val bitmapOrigin = MediaStore.Images.Media.getBitmap(requireActivity().getContentResolver(), Uri.fromFile(file));
+                                if (bitmapOrigin != null) {
 //                                    iv_photo.setImageBitmap(bitmap)
-                                    println(bitmap)
+                                    println(bitmapOrigin)
+
+                                    val exifOrientation = ExifInterface(mCurrentPhotoPath).getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+                                    val exifDegree = exifOrientationToDegrees(exifOrientation)
+                                    val bitmap = rotate(bitmapOrigin, exifDegree)
+
                                     file.delete()
+                                    val LoadingDialog: Dialog = ProgressDialog(requireContext())
+                                    LoadingDialog.show()
                                     var NewPhoto = GridItem(null, Firebase.auth.currentUser?.uid, imageToString(bitmap))
                                     val call = PhotoApiObject.retrofitService.CreatePhoto( Photo(Firebase.auth.currentUser?.uid,imageToString(bitmap)))
                                     call.enqueue(object: retrofit2.Callback<CreatePhoto> {
@@ -491,6 +568,10 @@ class BFragment : Fragment(), FragmentLifecycle, CellClickListner {
                                                     Log.d("ADD", response.body()!!.result)
                                                     NewPhoto._id = response.body()?.id
                                                     mAdapter.addItem(NewPhoto)
+                                                    LoadingDialog.dismiss()
+                                                }
+                                                else{
+                                                    LoadingDialog.dismiss()
                                                 }
                                             }
                                         }
@@ -545,10 +626,13 @@ class BFragment : Fragment(), FragmentLifecycle, CellClickListner {
             override fun onMenuItemClick(item: MenuItem?): Boolean {
                 when(item?.itemId){
                     R.id.Photo_Delete ->{
+                        val LoadingDialog: Dialog = ProgressDialog(requireContext())
+                        LoadingDialog.show()
                         val call = PhotoApiObject.retrofitService.DeletePhoto(gridItem._id)
                         call.enqueue(object: retrofit2.Callback<DeletePhoto> {
                             override fun onFailure(call: Call<DeletePhoto>, t: Throwable) {
                                 println("실패")
+                                LoadingDialog.dismiss()
                             }
                             override fun onResponse(call: Call<DeletePhoto>, response: retrofit2.Response<DeletePhoto>) {
                                 println(response.body())
@@ -556,6 +640,10 @@ class BFragment : Fragment(), FragmentLifecycle, CellClickListner {
                                     if (response.body()?.message == "photo deleted") {
                                         Log.d("ADD", response.body()!!.message)
                                         mAdapter.deleteItem(gridItem)
+                                        LoadingDialog.dismiss()
+                                    }
+                                    else{
+                                        LoadingDialog.dismiss()
                                     }
                                 }
 
@@ -585,6 +673,24 @@ class BFragment : Fragment(), FragmentLifecycle, CellClickListner {
         //이러한 ByteArray를 Base64로 변환한 형태를 리턴한다
         return Base64.encodeToString(imgBytes, Base64.DEFAULT)
     }
+
+    private fun exifOrientationToDegrees(exifOrientation: Int): Int {
+        if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_90) {
+            return 90
+        } else if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_180) {
+            return 180
+        } else if (exifOrientation == ExifInterface.ORIENTATION_ROTATE_270) {
+            return 270
+        }
+        return 0
+    }
+
+    private fun rotate(bitmap: Bitmap, degree: Int): Bitmap {
+        val matrix = Matrix()
+        matrix.postRotate(degree.toFloat())
+        return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+    }
+
 
 //    fun sendcurrentpostion(): Int {
 //        return photoposition
