@@ -177,17 +177,17 @@ class AFragment : Fragment(), SearchView.OnQueryTextListener, FragmentLifecycle,
         val call = ContactApiObject.retrofitService.GetUserContact(Firebase.auth.currentUser?.uid)
         call.enqueue(object: retrofit2.Callback<ArrayList<ContactModel>> {
             override fun onFailure(call: Call<ArrayList<ContactModel>>, t: Throwable) {
-                println("실패")
+                println("가져오기 실패")
             }
             override fun onResponse(call: Call<ArrayList<ContactModel>>, response: retrofit2.Response<ArrayList<ContactModel>>) {
-                println("성공?")
+                println("가져오기 성공?")
                 println(response.body())
-                response.body()?.let { mAdapter.bindItem(it) }
                 if(response.isSuccessful){
-                    println("성공")
+                    println("가져오기 성공")
+                    response.body()?.let { mAdapter.bindItem(it) }
                 }
                 else{
-                    println("성공?실패")
+                    println("가져오기 성공?실패")
 
 
                 }

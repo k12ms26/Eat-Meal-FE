@@ -150,6 +150,7 @@ class MainActivity : AppCompatActivity() {
         mDrawerLayout = findViewById(R.id.drawer_layout)
 
 
+
 //        if (user != null) {
 //            val profileName: TextView = findViewById(R.id.facebook_name)
 //            profileName.text = user.displayName
