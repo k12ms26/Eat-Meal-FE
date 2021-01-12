@@ -48,11 +48,7 @@ class ReadAdapter(val context: Context) : RecyclerView.Adapter<ReadAdapter.ViewH
         holder.textPeople.text = plan.fullPeople.toString()
         holder.likedPeople.text = plan.currentPeople.toString()
 
-//        if( plan.fullPeople == plan.currentPeople) {
-//            holder.total.setBackgroundColor(Color.parseColor("#D8D8D8"))
-//            holder.total.isClickable = false
-////            notifyDataSetChanged()
-//        }
+
 
 
         val cancel_btn = holder.cancel_btn
@@ -62,6 +58,15 @@ class ReadAdapter(val context: Context) : RecyclerView.Adapter<ReadAdapter.ViewH
         like_btn.setImageResource(R.drawable.off_select)
         cancel_btn.visibility = View.VISIBLE
         like_btn.visibility = View.VISIBLE
+        holder.total.setBackgroundColor(Color.parseColor("#FFFFFF"))
+
+
+        if( plan.fullPeople == plan.currentPeople) {
+            holder.total.setBackgroundColor(Color.parseColor("#D8D8D8"))
+            holder.total.isClickable = false
+        }
+
+
 
         Firebase.auth.currentUser?.let {
             for (name in plan.liked) {
@@ -149,11 +154,10 @@ class ReadAdapter(val context: Context) : RecyclerView.Adapter<ReadAdapter.ViewH
                                     plan.liked.add(serverUID(uid))
                                     plan.currentPeople = response!!.body()!!.size
                                     holder.likedPeople.text = plan.currentPeople.toString()
-//                                    if( plan.fullPeople == plan.currentPeople) {
-//                                        holder.total.setBackgroundColor(Color.parseColor("#D8D8D8"))
-//                                        holder.total.isClickable = false
-////                                        notifyDataSetChanged()
-//                                    }
+                                    if( plan.fullPeople == plan.currentPeople) {
+                                        holder.total.setBackgroundColor(Color.parseColor("#D8D8D8"))
+                                        holder.total.isClickable = false
+                                    }
                                     notifyDataSetChanged()
                                     LoadingDialog.dismiss()
                                 } else {

@@ -1,8 +1,10 @@
 package com.example.tabtest
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.MenuItem
@@ -88,6 +90,7 @@ class MainActivity : AppCompatActivity() {
 
 
 
+    @SuppressLint("ResourceAsColor")
     override fun onCreate(savedInstanceState: Bundle?) {
 
         auth = Firebase.auth
@@ -139,13 +142,14 @@ class MainActivity : AppCompatActivity() {
 
 
         val toolbar: Toolbar = findViewById(R.id.tool_bar)
+        toolbar.setTitleTextColor(Color.parseColor("#FFFFFFFF")) //
         setSupportActionBar(toolbar)
         val actionBar: ActionBar? = supportActionBar
 //        actionBar?.setDisplayShowTitleEnabled(false) // 기존 title 지우기
 
         actionBar?.setDisplayHomeAsUpEnabled(true) // 뒤로가기 버튼 만들기
 
-        actionBar?.setHomeAsUpIndicator(R.drawable.ic_add) //뒤로가기 버튼 이미지 지정
+        actionBar?.setHomeAsUpIndicator(R.drawable.ic_add_home) //뒤로가기 버튼 이미지 지정
 
         mDrawerLayout = findViewById(R.id.drawer_layout)
 
