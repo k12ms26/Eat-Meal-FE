@@ -1,8 +1,10 @@
 package com.example.tabtest.ui.main
 
 import android.app.AlertDialog
+import android.app.Dialog
 import android.content.Context
 import android.content.DialogInterface
+import android.graphics.Color
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -22,7 +24,7 @@ import com.google.firebase.ktx.Firebase
 import retrofit2.Call
 import java.lang.String
 
-class ReadAdapter() : RecyclerView.Adapter<ReadAdapter.ViewHolder>(){
+class ReadAdapter(val context: Context) : RecyclerView.Adapter<ReadAdapter.ViewHolder>(){
     private var items = mutableListOf<Plan>()
     lateinit var v : View
     var highposition : Int = 0
@@ -46,11 +48,20 @@ class ReadAdapter() : RecyclerView.Adapter<ReadAdapter.ViewHolder>(){
         holder.textPeople.text = plan.fullPeople.toString()
         holder.likedPeople.text = plan.currentPeople.toString()
 
-        val cancel_btn = v.findViewById<ImageButton>(R.id.cancelbutton)
+//        if( plan.fullPeople == plan.currentPeople) {
+//            holder.total.setBackgroundColor(Color.parseColor("#D8D8D8"))
+//            holder.total.isClickable = false
+////            notifyDataSetChanged()
+//        }
+
+
+        val cancel_btn = holder.cancel_btn
         //UID 안맞으면 X 버튼 안보이기 추가!!!!
-        val like_btn = v.findViewById<ImageButton>(R.id.call_btn)
+        val like_btn = holder.like_btn
         like_btn.tag = "false"
         like_btn.setImageResource(R.drawable.off_select)
+        cancel_btn.visibility = View.VISIBLE
+        like_btn.visibility = View.VISIBLE
 
         Firebase.auth.currentUser?.let {
             for (name in plan.liked) {
@@ -61,13 +72,26 @@ class ReadAdapter() : RecyclerView.Adapter<ReadAdapter.ViewHolder>(){
             }
         }
 
+        plan.name?.let{
+            if (plan.name != uid){
+                cancel_btn.visibility = View.GONE
+            }else{
+                like_btn.visibility=View.GONE
+            }
+        }
+
+
+
         like_btn.setOnClickListener {
+            val LoadingDialog: Dialog = ProgressDialog(context)
+            LoadingDialog.show()
             if(like_btn.tag == "true"){ // 좋아요 이미 눌려있음
 
                 val call = PlanApiObject.retrofitService.LikedPlan(plan._id, Like(uid,false))
                 call.enqueue(object: retrofit2.Callback<LikedPlan> {
                     override fun onFailure(call: Call<LikedPlan>, t: Throwable) {
                         println("가져오기 실패")
+                        LoadingDialog.dismiss()
                     }
                     override fun onResponse(call: Call<LikedPlan>, response: retrofit2.Response<LikedPlan>) {
                         println("가져오기 성공?")
@@ -75,19 +99,27 @@ class ReadAdapter() : RecyclerView.Adapter<ReadAdapter.ViewHolder>(){
                         if(response.isSuccessful){
                             println("가져오기 성공")
                             response.body()?.let {
-                                if(response!!.body()?.message == "plan updated"){
+                                if(response!!.body()?.message == "plan updated") {
                                     like_btn.setTag("false")
                                     like_btn.setImageResource(R.drawable.off_select)
                                     plan.liked.remove(serverUID(uid))
                                     plan.currentPeople = response!!.body()!!.size
+                                    holder.likedPeople.text = plan.currentPeople.toString()
+                                    LoadingDialog.dismiss()
                                     notifyDataSetChanged()
+//                                    if( plan.fullPeople == plan.currentPeople) {
+//                                        holder.total.setBackgroundColor(Color.parseColor("#D8D8D8"))
+//                                        holder.total.isClickable = false
+////                                        notifyDataSetChanged()
+//                                    }
+                                }else{
+                                    LoadingDialog.dismiss()
                                 }
                             }
                         }
                         else{
                             println("가져오기 성공?실패")
-
-
+                            LoadingDialog.dismiss()
                         }
                     }
                 })
@@ -99,6 +131,7 @@ class ReadAdapter() : RecyclerView.Adapter<ReadAdapter.ViewHolder>(){
                 call.enqueue(object : retrofit2.Callback<LikedPlan> {
                     override fun onFailure(call: Call<LikedPlan>, t: Throwable) {
                         println("가져오기 실패")
+                        LoadingDialog.dismiss()
                     }
 
                     override fun onResponse(
@@ -115,11 +148,21 @@ class ReadAdapter() : RecyclerView.Adapter<ReadAdapter.ViewHolder>(){
                                     like_btn.setImageResource(R.drawable.on_select)
                                     plan.liked.add(serverUID(uid))
                                     plan.currentPeople = response!!.body()!!.size
+                                    holder.likedPeople.text = plan.currentPeople.toString()
+//                                    if( plan.fullPeople == plan.currentPeople) {
+//                                        holder.total.setBackgroundColor(Color.parseColor("#D8D8D8"))
+//                                        holder.total.isClickable = false
+////                                        notifyDataSetChanged()
+//                                    }
                                     notifyDataSetChanged()
+                                    LoadingDialog.dismiss()
+                                } else {
+                                    LoadingDialog.dismiss()
                                 }
                             }
                         } else {
                             println("가져오기 성공?실패")
+                            LoadingDialog.dismiss()
                         }
                     }
 
@@ -129,18 +172,15 @@ class ReadAdapter() : RecyclerView.Adapter<ReadAdapter.ViewHolder>(){
 
         }
 
-        plan.name?.let{
-            if (plan.name != uid){
-                cancel_btn.visibility = View.GONE
-            }
-        }
-
         cancel_btn.setOnClickListener {
+            val LoadingDialog: Dialog = ProgressDialog(context)
+            LoadingDialog.show()
 
             val call = PlanApiObject.retrofitService.DeletePlan(plan._id)
             call.enqueue(object: retrofit2.Callback<DeletedPlan> {
                 override fun onFailure(call: Call<DeletedPlan>, t: Throwable) {
                     println("실패")
+                    LoadingDialog.dismiss()
                 }
                 override fun onResponse(call: Call<DeletedPlan>, response: retrofit2.Response<DeletedPlan>) {
                     println(response.body())
@@ -149,6 +189,9 @@ class ReadAdapter() : RecyclerView.Adapter<ReadAdapter.ViewHolder>(){
                             Log.d("ADD", response.body()!!.message)
                             items.remove(plan)
                             notifyDataSetChanged()
+                            LoadingDialog.dismiss()
+                        } else{
+                            LoadingDialog.dismiss()
                         }
                     }
 
@@ -191,6 +234,10 @@ class ReadAdapter() : RecyclerView.Adapter<ReadAdapter.ViewHolder>(){
         var textPlace: TextView = itemView.findViewById(R.id.whereEditText)
         var textPeople: TextView = itemView.findViewById(R.id.muchEditText)
         var likedPeople: TextView = itemView.findViewById(R.id.whatNumber)
+        var cancel_btn = itemView.findViewById<ImageButton>(R.id.cancelbutton)
+        //UID 안맞으면 X 버튼 안보이기 추가!!!!
+        var like_btn = itemView.findViewById<ImageButton>(R.id.call_btn)
+        var total = itemView.findViewById<View>(R.id.updateanddelete)
     }
 
     fun addItem(plan: Plan){

@@ -8,6 +8,7 @@ import androidx.fragment.app.Fragment
 import com.example.tabtest.R
 
 import android.app.AlertDialog
+import android.app.Dialog
 import android.app.ProgressDialog
 import android.util.Log
 import android.widget.ImageButton
@@ -105,13 +106,14 @@ class CFragment : Fragment(), FragmentLifecycle {
     private lateinit var linearLayoutManager: LinearLayoutManager
     private lateinit var dividerItemDecoration: DividerItemDecoration
     private lateinit var planList: MutableList<Plan>
-    private var adapter = ReadAdapter()
+    private lateinit var adapter: ReadAdapter
 
 
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         val root = inflater.inflate(R.layout.fragment_c, container, false)
         fragC = root
+        adapter = ReadAdapter(requireContext())
 
         super.onCreate(savedInstanceState)
 //        setContentView(R.layout.fragment_tmptmp)
@@ -149,15 +151,14 @@ class CFragment : Fragment(), FragmentLifecycle {
     }
 
     private fun get() {
-        val progressDialog = ProgressDialog(requireContext())
-        progressDialog.setMessage("Loading...")
-        progressDialog.show()
+        val LoadingDialog: Dialog = ProgressDialog(requireContext())
+        LoadingDialog.show()
 
         val call = PlanApiObject.retrofitService.GetPlan()
         call.enqueue(object: retrofit2.Callback<ArrayList<Plan>> {
             override fun onFailure(call: Call<ArrayList<Plan>>, t: Throwable) {
                 println("가져오기 실패")
-                progressDialog.dismiss()
+                LoadingDialog.dismiss()
             }
             override fun onResponse(call: Call<ArrayList<Plan>>, response: retrofit2.Response<ArrayList<Plan>>) {
                 println("가져오기 성공?")
@@ -165,13 +166,11 @@ class CFragment : Fragment(), FragmentLifecycle {
                 if(response.isSuccessful){
                     println("가져오기 성공")
                     response.body()?.let { adapter.binditem(it) }
-                    progressDialog.dismiss()
+                    LoadingDialog.dismiss()
                 }
                 else{
                     println("가져오기 성공?실패")
-                    progressDialog.dismiss()
-
-
+                    LoadingDialog.dismiss()
                 }
             }
         })

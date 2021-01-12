@@ -56,7 +56,7 @@ open class openCreateDialog: AppCompatDialogFragment() {
             )
             dialog.show()
         })
-        var people = 0
+        var people = 1
         edit_fullpeople.adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, arrayOf("1","2","3"))
         edit_fullpeople.setOnItemSelectedListener(object: OnItemSelectedListener{
             override fun onItemSelected(

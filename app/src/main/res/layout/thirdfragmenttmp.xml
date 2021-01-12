@@ -26,8 +26,8 @@
 
     <ImageView
         android:id="@+id/whenImg"
-        android:layout_width="0dp"
-        android:layout_height="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginStart="30dp"
         android:layout_marginLeft="25dp"
         android:layout_marginBottom="73dp"
@@ -38,8 +38,8 @@
 
     <ImageView
         android:id="@+id/whereImg"
-        android:layout_width="0dp"
-        android:layout_height="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginStart="30dp"
         android:layout_marginLeft="25dp"
         android:layout_marginBottom="41dp"
@@ -50,8 +50,8 @@
 
     <ImageView
         android:id="@+id/muchImg"
-        android:layout_width="0dp"
-        android:layout_height="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginStart="30dp"
         android:layout_marginLeft="25dp"
         android:layout_marginBottom="9dp"
@@ -115,11 +115,11 @@
 
     <TextView
         android:id="@+id/textView2"
-        android:layout_width="40dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginRight="60dp"
         android:layout_marginBottom="5dp"
-        android:text="명의"
+        android:text="명"
         android:textSize="20sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintBottom_toBottomOf="@+id/call_btn"
@@ -132,7 +132,7 @@
 
         android:layout_marginRight="10dp"
         android:background="@android:color/transparent"
-        android:hint="0"
+        android:text="0"
         android:textSize="20sp"
         app:layout_constraintEnd_toStartOf="@+id/textView2"
         app:layout_constraintBottom_toBottomOf="@id/textView2"
