@@ -30,12 +30,14 @@ import com.facebook.FacebookCallback
 import com.facebook.FacebookException
 import com.facebook.login.LoginManager
 import com.facebook.login.LoginResult
+import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.material.navigation.NavigationView
 import com.google.android.material.tabs.TabLayout
 import com.google.firebase.auth.FacebookAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
 import com.google.firebase.ktx.Firebase
+import com.google.firebase.messaging.FirebaseMessaging
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
@@ -153,6 +155,25 @@ class MainActivity : AppCompatActivity() {
 
         mDrawerLayout = findViewById(R.id.drawer_layout)
 
+        //////////////////MESSAGE TOKEN////////////////////
+
+        FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
+            if (!task.isSuccessful) {
+                Log.w("TAG", "Fetching FCM registration token failed", task.exception)
+                return@OnCompleteListener
+            }
+
+            // Get new FCM registration token
+            val token = task.result
+            Log.d("token", token!!)
+
+            // Log and toast
+//            val msg = getString(R.string.msg_token_fmt, token)
+//            Log.d("TAG", msg)
+//            Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
+        })
+
+        //////////////////MESSAGE TOKEN//////////////////////
 
 
 //        if (user != null) {
